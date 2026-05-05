@@ -1,24 +1,24 @@
-# 📡 MacSync-LPS28 LoRaWAN Codec Documentation
+# 📡 MacSync-LS7_X1 LoRaWAN Codec Documentation
 
 ## 📘 Overview
-**MacSync-LPS28** is a LoRaWAN-enabled **Temeperature, Humidity & Hydrostatic Pressure sensor** ( [LPS288DFW](https://www.st.com/en/mems-and-sensors/lps28dfw.html) ) device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
+**MacSync-LS7_X1** is a LoRaWAN-enabled **Temeperature, Humidity & Hydrostatic Pressure sensor** ( [JXCT 7 in 1 Integrated Soil Sensor](https://www.jxct-iot.com/product/showproduct.php?id=197) ) device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
 
 ---
 
 ## 📂 Repository Structure
 
-MacSync-LPS28/
+MacSync-LS7_X1/
 │
 ├── Decoder/
-│   ├── MacSync-LPS28_TTN.js
-│   ├── MacSync-LPS28_Chirpstack.js
-│   ├── MacSync-LPS28_Milesight.js
+│   ├── MacSync-LS7_X1_TTN.js
+│   ├── MacSync-LS7_X1_Chirpstack.js
+│   ├── MacSync-LS7_X1_Milesight.js
 │
 ├── Encoder/
-│   ├── MacSync-LPS28_TTN.js
-│   ├── MacSync-LPS28_Milesight.js
+│   ├── MacSync-LS7_X1_TTN.js
+│   ├── MacSync-LS7_X1_Milesight.js
 │
-└── MacSync-LPS28.md
+└── MacSync-LS7_X1.md
 
 ---
 
@@ -47,8 +47,12 @@ Converts raw LoRaWAN payload into readable JSON.
 ```json
 {
   "temperature": 25.6,
-  "humidity": 60.2,
-  "level": 10.2,
+  "moisture": 60.2,
+  "ec": 957,
+  "ph": 7,
+  "n": 0,
+  "p": 0,
+  "k": 0,
   "battery": 100
 }
 ```
