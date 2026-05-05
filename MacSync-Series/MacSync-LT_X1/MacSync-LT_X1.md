@@ -50,7 +50,7 @@ Converts raw LoRaWAN payload into readable JSON.
   "humidity": 60.2,
   "battery": 3.7
 }
-
+```
 
 ## 🔓 Encoder (Downlink)
 
