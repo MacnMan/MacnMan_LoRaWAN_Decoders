@@ -1,7 +1,7 @@
 # 📡 MacSync-LT_X1 LoRaWAN Codec Documentation
 
 ## 📘 Overview
-**MacSync-LT_X1** is a LoRaWAN-enabled sensor device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight gateways.
+**MacSync-LT_X1** is a LoRaWAN-enabled Temeperature & Humidity sensor ([SHT40](https://sensirion.com/products/catalog/SHT40)) device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight gateways.
 
 ---
 
@@ -48,7 +48,7 @@ Converts raw LoRaWAN payload into readable JSON.
 {
   "temperature": 25.6,
   "humidity": 60.2,
-  "battery": 3.7
+  "battery": 100
 }
 ```
 
