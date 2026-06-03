@@ -1,0 +1,1 @@
+// MacSync-L-Odor_X1_Encoder.js
