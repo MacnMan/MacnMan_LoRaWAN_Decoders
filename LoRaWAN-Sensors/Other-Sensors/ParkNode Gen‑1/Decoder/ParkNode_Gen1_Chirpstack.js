@@ -1,14 +1,16 @@
 /**
- * LoRaWAN Decoder for parkomate
+ * LoRaWAN Decoder for parkomate 
  * Macnman Technologies Pvt.Ltd
  * Writen By : MACNMAN
- * Target : Milesight Gateway (built-in Network Server)
 */
 
-// Milesight gateway entry point: Decode(fPort, bytes)
-function Decode(fPort, bytes) {
+function decodeUplink(input) {
     return {
-        Payload: Decoder(bytes, fPort)
+        data: {
+            Payload: Decoder(input.bytes, input.port),
+        },
+        warnings: [],
+        errors: []
     };
 }
 
@@ -20,7 +22,7 @@ function toSigned16(unsignedValue) {
 // decoding uploaded data
 function Decoder(bytes, port) {
     var dataIndex = 0;
-
+    
     // -------------------------------------------------------------
     // TILT TAMPER ALERT CHECK
     // If the first byte is 0x0F (15), we know it's the 6-byte tamper alert!
@@ -49,14 +51,14 @@ function Decoder(bytes, port) {
         "oem": "MACNMAN",
         "device": "ParkNode_LWAN_V1.0",
         "version": "1.0"
-    };
+    }
 
     payloadData.sensorInfo = {};
     payloadData.parkStatus = bytes[dataIndex++] === 0x01 ? true : false;
     payloadData.battery = bytes[dataIndex++];
-
+    
     // Parse normal System Timestamp
     payloadData.Systimestamp = (bytes[dataIndex++] << 24) + (bytes[dataIndex++] << 16) + (bytes[dataIndex++] << 8) + bytes[dataIndex++];
-
+    
     return payloadData;
 }
