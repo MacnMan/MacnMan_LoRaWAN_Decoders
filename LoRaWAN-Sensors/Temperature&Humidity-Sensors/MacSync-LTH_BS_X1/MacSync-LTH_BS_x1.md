@@ -1,24 +1,24 @@
-# 📡 MacSync-LT_X2 LoRaWAN Codec Documentation
+# 📡 MacSync-LTH_BS_x1 LoRaWAN Codec Documentation
 
 ## 📘 Overview
-**MacSync-LT_X2** is a LoRaWAN-enabled **Temeperature, Humidity & Envirnmental Pressure sensor** ( [BOSCH BME280](https://www.bosch-sensortec.com/en/products/environmental-sensors/humidity-sensors-bme280) ) device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
+**MacSync-LTH_BS_x1** is a LoRaWAN-enabled **Temeperature & Humidity sensor** ( [SHT40](https://sensirion.com/products/catalog/SHT40) ) device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
 
 ---
 
 ## 📂 Repository Structure
 
-MacSync-LT_X2/
+MacSync-LTH_BS_x1/
 │
 ├── Decoder/
-│   ├── MacSync-LT_X2_TTN.js
-│   ├── MacSync-LT_X2_Chirpstack.js
-│   ├── MacSync-LT_X2_Milesight.js
+│   ├── MacSync-LTH_BS_x1_TTN.js
+│   ├── MacSync-LTH_BS_x1_Chirpstack.js
+│   ├── MacSync-LTH_BS_x1_Milesight.js
 │
 ├── Encoder/
-│   ├── MacSync-LT_X2_TTN.js
-│   ├── MacSync-LT_X2_Milesight.js
+│   ├── MacSync-LTH_BS_x1_TTN.js
+│   ├── MacSync-LTH_BS_x1_Milesight.js
 │
-└── MacSync-LT_X2.md
+└── MacSync-LTH_BS_x1.md
 
 ---
 
@@ -48,7 +48,6 @@ Converts raw LoRaWAN payload into readable JSON.
 {
   "temperature": 25.6,
   "humidity": 60.2,
-  "pressure": 24586.23,
   "battery": 100
 }
 ```
