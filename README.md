@@ -8,29 +8,10 @@ JavaScript payload **decoders** (uplink: bytes → JSON) and **encoders** (downl
 
 ## 📂 Device Index
 
-### LoRaWAN Dataloggers (MacSync LX1 family)
 | Device | Description | Codec |
 |--------|-------------|-------|
-| [MacSync-LBO-X1](LoRaWAN-Dataloggers/MacSync-LBO-X1) | RS485 (Modbus RTU) / Analog datalogger — battery operated | Decoder + Encoder |
-| [MacSync-LPO-X1](LoRaWAN-Dataloggers/MacSync-LPO-X1) | RS485 (Modbus RTU) / Analog datalogger — line powered (9–36 V DC) | Decoder + Encoder |
-| [MacSync-LSO-X1](LoRaWAN-Dataloggers/MacSync-LSO-X1) | RS485 (Modbus RTU) / Analog datalogger — solar powered | Decoder + Encoder |
-
-### LoRaWAN Controllers (MacSet)
-| Device | Description | Codec |
-|--------|-------------|-------|
-| [MacSet-LX1](LoRaWAN-Controllers/MacSet-LX1) | 2-relay controller with RS485 | Downlink command docs |
-| [MacSet-LX2](LoRaWAN-Controllers/MacSet-LX2) | 8 × 16 A relay Multi-IO controller with RS485 + 8 AI/DI | Downlink command docs |
-
-### LoRaWAN Sensors
-| Device | Description | Codec |
-|--------|-------------|-------|
-| [MacSync-LT_X1](LoRaWAN-Sensors/Temperature%26Humidity-Sensors/MacSync-LT_X1) | Temperature & humidity (SHT40) | Decoder + Encoder |
-| [MacSync-LTH_BS_X1](LoRaWAN-Sensors/Temperature%26Humidity-Sensors/MacSync-LTH_BS_X1) | Temperature & humidity (SHT40) | Decoder + Encoder |
-| [MacSync-LS2_X1](LoRaWAN-Sensors/Soil-Sensors/MacSync-LS2_X1) | 2-in-1 soil moisture & temperature | Decoder + Encoder |
-| [MacSync-LS7_X1](LoRaWAN-Sensors/Soil-Sensors/MacSync-LS7_X1) | 7-in-1 soil sensor (moisture, temp, EC, pH, N, P, K) | Decoder + Encoder |
-| [MacSync-LPS28](LoRaWAN-Sensors/Pressure-Sensors/MacSync-LPS28) | Pressure / hydrostatic level (LPS28DFW) | Decoder + Encoder |
-| [MacSync-L-Odor_X1](LoRaWAN-Sensors/Gas-Sensors/MacSync-L-Odor_X1) | Odour monitoring — NH₃ / H₂S | Decoder + Encoder |
-| [ParkNode Gen-1](LoRaWAN-Sensors/Other-Sensors) | Magnetic parking occupancy sensor | Decoder + Encoder |
+| [MacSync_LBD_STD_X1_RS485](LoRaWAN-Dataloggers/MacSync_LBD_STD_X1_RS485) | RS485 (Modbus RTU) & Analog to LoRaWAN® datalogger (MacSync LX1 family) | Decoder + Encoder |
+| [MacSync_LBS_TH_X1](LoRaWAN-Sensors/MacSync_LBS_TH_X1) | Temperature & humidity sensor (SHT40) | Decoder + Encoder |
 
 ---
 
@@ -45,6 +26,7 @@ Each device folder contains:
 │   ├── <Device>_Chirpstack.js
 │   └── <Device>_Milesight.js
 ├── Encoder/          downlink codec
+│   └── <Device>_Encoder.js
 └── <Device>.md       payload format + downlink command reference
 ```
 
@@ -66,8 +48,8 @@ Each device folder contains:
 
 ## 🔄 Codec Conventions
 
-- **Uplink JSON** contains `deviceInfo` (battery, UTC + IST timestamps, fPort) and `sensorInfo` (readings) for the newer MacSync-L family, or a flat object for the older device families.
-- **Downlink JSON** always carries the target `fPort` — see each device's `.md` for the full command table.
+- **Uplink JSON** contains `deviceInfo` (battery, UTC + IST timestamps, fPort) and `sensorInfo` (readings).
+- **Downlink JSON** always carries the target `fPort` — see each device's `.md` for the full command table. Every applied config is echoed back by the device on the same port.
 - Timestamps are Unix UTC seconds, big-endian on the wire.
 
 ---
