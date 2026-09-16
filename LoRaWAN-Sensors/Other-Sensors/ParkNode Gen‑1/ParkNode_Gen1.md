@@ -156,12 +156,25 @@ application/{applicationId}/device/{devEui}/command/down
 
 ---
 
-## 1. Change Transmission Interval
+### 📋 Downlink Command Summary
+
+| FPort | Command | Payload | Notes |
+|-------|---------|---------|-------|
+| `3`  | Switch LoRaWAN class | `class` (1B: 0=A, 1=B, 2=C) | applied immediately |
+| `6`  | Event TX interval | `txTime` (u16, seconds) | minimum 10 s |
+| `7`  | Board reset | any 1 byte | re-inits magnetometer + reboots |
+| `11` | Heartbeat uplink interval | `uplinkTime` (u16, seconds) | minimum 300 s |
+| `12` | ADR + Data rate | `adr` (0/1) + `dr` (0–5) | device reboots to apply |
+| `13` | Message type | `msgtype` (0=unconf, 1=conf) | applied immediately |
+
+---
+
+## 1. Change Event Transmission Interval
 **FPort:** `06`
 
 ### Description
-- Sets the heartbeat uplink interval in **seconds**
-- Device applies the new interval immediately
+- Sets the event/status-change TX interval in **seconds** (minimum 10)
+- Device applies the new interval immediately and confirms with a tamper-frame uplink
 
 ### ChirpStack Object JSON
 ```json
@@ -181,4 +194,39 @@ application/{applicationId}/device/{devEui}/command/down
     "fPort": 6
   }
 }
+```
+
+## 2. Change Heartbeat Uplink Interval
+**FPort:** `11` — heartbeat interval in seconds (minimum 300).
+
+```json
+{ "uplinkTime": 3600, "fPort": 11 }
+```
+
+## 3. Switch LoRaWAN Class
+**FPort:** `3` — `0` = Class A, `1` = Class B, `2` = Class C.
+
+```json
+{ "class": 2, "fPort": 3 }
+```
+
+## 4. ADR and Data Rate
+**FPort:** `12` — `adr` 0/1 and `dr` 0–5. The device reboots to apply.
+
+```json
+{ "adr": 1, "dr": 3, "fPort": 12 }
+```
+
+## 5. Message Type
+**FPort:** `13` — `0` = unconfirmed, `1` = confirmed uplinks.
+
+```json
+{ "msgtype": 1, "fPort": 13 }
+```
+
+## 6. Board Reset
+**FPort:** `7` — any payload; re-initializes the magnetometer and resets the board.
+
+```json
+{ "reset": 1, "fPort": 7 }
 ```

@@ -1,7 +1,7 @@
 # 📡 MacSync-LS7_X1 LoRaWAN Codec Documentation
 
 ## 📘 Overview
-**MacSync-LS7_X1** is a LoRaWAN-enabled **Temeperature, Humidity & Hydrostatic Pressure sensor** ( [JXCT 7 in 1 Integrated Soil Sensor](https://www.jxct-iot.com/product/showproduct.php?id=197) ) device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
+**MacSync-LS7_X1** is a LoRaWAN-enabled **7-in-1 Soil sensor** ( [JXCT 7 in 1 Integrated Soil Sensor](https://www.jxct-iot.com/product/showproduct.php?id=197) ) measuring soil moisture, temperature, EC, pH, nitrogen, phosphorus and potassium. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
 
 ---
 
@@ -46,14 +46,18 @@ Converts raw LoRaWAN payload into readable JSON.
 ### 📤 Output (Example)
 ```json
 {
-  "temperature": 25.6,
-  "moisture": 60.2,
-  "ec": 957,
-  "ph": 7,
-  "n": 0,
-  "p": 0,
-  "k": 0,
-  "battery": 100
+  "message_type": "Heartbeat",
+  "sensor_id": 1,
+  "humidity_percent": 60.2,
+  "temperature_c": 25.6,
+  "ec_us_cm": 957,
+  "ph": 7.0,
+  "nitrogen_mgkg": 12,
+  "phosphorus_mgkg": 8,
+  "potassium_mgkg": 20,
+  "battery_percent": 100,
+  "unix_timestamp": 1757923200,
+  "timestampUTC": "2025-09-15T08:00:00.000Z"
 }
 ```
 

@@ -78,19 +78,13 @@ application/{applicationId}/device/{devEui}/command/down
 
 ---
 
-## 1. Change Transmission Interval  
-**FPort:** `06`
+Every applied config is echoed back by the device as a `config_ack` uplink on the same port.
 
-### Description
-- Sets uplink transmission interval in **seconds**
-- Device applies new interval immediately
+## 1. Change Transmission Interval
+**FPort:** `16` — heartbeat interval in **seconds** (60–86400), unsigned 32-bit.
 
-### ChirpStack Object JSON
 ```json
-{
-  "txTime": 600,
-  "fPort": 6
-}
+{ "interval": 600, "fPort": 16 }
 ```
 
 ### MQTT JSON Example
@@ -99,8 +93,45 @@ application/{applicationId}/device/{devEui}/command/down
   "devEui": "0080e11505ca2663",
   "confirmed": true,
   "object": {
-    "txTime": 600,
-    "fPort": 6
+    "interval": 600,
+    "fPort": 16
   }
 }
+```
+
+## 2. ADR On/Off
+**FPort:** `17` — device reboots to apply.
+
+```json
+{ "adr": 1, "fPort": 17 }
+```
+
+## 3. Message Type
+**FPort:** `18` — `0` = unconfirmed, `1` = confirmed.
+
+```json
+{ "msgtype": 1, "fPort": 18 }
+```
+
+## 4. Message Info (ADR + SF + Message Type)
+**FPort:** `19` — `sf` is the spreading factor 7–12 (sent raw; firmware converts to DR). Device reboots to apply.
+
+```json
+{ "adr": 0, "sf": 9, "msgtype": 1, "fPort": 19 }
+```
+
+## 5. Trigger Configuration
+**FPort:** `20`
+- `trig`: 1 or 2 · `param`: `0` = temperature, `1` = humidity
+- `min` / `max`: threshold window (2 decimals) · `checktime`: seconds · `enable`: 0/1
+
+```json
+{ "trig": 1, "param": 0, "min": 10.00, "max": 40.00, "checktime": 60, "enable": 1, "fPort": 20 }
+```
+
+## 6. Sampling Configuration
+**FPort:** `21` — `param`: `0` = temperature, `1` = humidity, `2` = both · `count`: 2–12 · `enable`: 0/1
+
+```json
+{ "param": 2, "count": 6, "enable": 1, "fPort": 21 }
 ```

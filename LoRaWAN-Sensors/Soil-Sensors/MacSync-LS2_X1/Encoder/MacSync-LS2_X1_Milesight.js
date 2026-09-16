@@ -1,4 +1,4 @@
-// TTN downlink Encoder MacSync-LS7_X1.
+// Milesight downlink Encoder MacSync-LS2_X1.
 function encodeDownlink(input) {
     var portNumber = (input.data && input.data.fPort !== undefined) ? input.data.fPort : input.fPort;
     var bytes = [];

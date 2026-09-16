@@ -1,24 +1,26 @@
-# 📡 MacSync-LS7_X1 LoRaWAN Codec Documentation
+# 📡 MacSync-LS2_X1 LoRaWAN Codec Documentation
 
 ## 📘 Overview
-**MacSync-LS7_X1** is a LoRaWAN-enabled **Temeperature, Humidity & Hydrostatic Pressure sensor** ( [JXCT 7 in 1 Integrated Soil Sensor](https://www.jxct-iot.com/product/showproduct.php?id=197) ) device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
+**MacSync-LS2_X1** is a LoRaWAN-enabled **2-in-1 Soil Moisture & Temperature sensor** ( [JXCT integrated soil sensor](https://www.jxct-iot.com/) ) device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
 
 ---
 
 ## 📂 Repository Structure
 
-MacSync-LS7_X1/
+```
+MacSync-LS2_X1/
 │
 ├── Decoder/
-│   ├── MacSync-LS7_X1_TTN.js
-│   ├── MacSync-LS7_X1_Chirpstack.js
-│   ├── MacSync-LS7_X1_Milesight.js
+│   ├── MacSync-LS2_X1_TTN.js
+│   ├── MacSync-LS2_X1_Chirpstack.js
+│   ├── MacSync-LS2_X1_Milesight.js
 │
 ├── Encoder/
-│   ├── MacSync-LS7_X1_TTN.js
-│   ├── MacSync-LS7_X1_Milesight.js
+│   ├── MacSync-LS2_X1_TTN.js
+│   ├── MacSync-LS2_X1_Milesight.js
 │
-└── MacSync-LS7_X1.md
+└── MacSync-LS2_X1.md
+```
 
 ---
 
@@ -36,28 +38,40 @@ MacSync-LS7_X1/
 Converts raw LoRaWAN payload into readable JSON.
 
 ### ✅ Supported Platforms
-- TTN (The Things Network)
-- ChirpStack
-- Milesight Gateway
+- TTN (The Things Network) — `decodeUplink(input)`
+- ChirpStack — `decodeUplink(input)`
+- Milesight Gateway — `Decode(fPort, bytes)`
 
-### 📥 Input
-- Raw payload (HEX/Base64 / bytes)
+### 📦 Payload Formats
+
+**Boot message** — first byte `0x00`: OEM ID, firmware & hardware version, TX interval, timestamp.
+
+**Heartbeat** — first byte `0x01`:
+
+| Byte  | Field | Description |
+|-------|-------|-------------|
+| 0     | uplink type | `0x01` = data |
+| 1     | sensor id | device sensor identifier |
+| 2     | status | `0x00` = OK, else sensor read error |
+| 3–4   | moisture ×10 | u16, %RH of soil (volumetric) |
+| 5–6   | temperature ×10 | s16, °C |
+| 7     | battery | % |
+| 8–11  | timestamp | u32 UTC seconds (big-endian) |
 
 ### 📤 Output (Example)
 ```json
 {
-  "temperature": 25.6,
-  "moisture": 60.2,
-  "ec": 957,
-  "ph": 7,
-  "n": 0,
-  "p": 0,
-  "k": 0,
-  "battery": 100
+  "message_type": "Heartbeat",
+  "sensor_id": 1,
+  "humidity_percent": 60.2,
+  "temperature_c": 25.6,
+  "battery_percent": 100,
+  "unix_timestamp": 1757923200,
+  "timestampUTC": "2025-09-15T08:00:00.000Z"
 }
 ```
 
-## 🔓 Encoder (Downlink)
+## 🔒 Encoder (Downlink)
 
 Converts JSON commands into encoded payload for device configuration.
 
@@ -83,7 +97,7 @@ application/{applicationId}/device/{devEui}/command/down
 
 ---
 
-## 1. Change Transmission Interval  
+## 1. Change Transmission Interval
 **FPort:** `06`
 
 ### Description
