@@ -1,60 +1,81 @@
 # 📡 MacSync-LBS-TH-X1 LoRaWAN Codec Documentation
 
 ## 📘 Overview
-**MacSync-LBS-TH-X1** is a LoRaWAN-enabled **Temeperature & Humidity sensor** ( [SHT40](https://sensirion.com/products/catalog/SHT40) ) device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
+**MacSync-LBS-TH-X1** is a LoRaWAN-enabled **Temperature & Humidity sensor** ( [SHT40](https://sensirion.com/products/catalog/SHT40) ). This folder provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
 
 ---
 
 ## 📂 Repository Structure
 
+```
 MacSync-LBS-TH-X1/
 │
 ├── Decoder/
-│   ├── MacSync-LBS-TH-X1_TTN.js
-│   ├── MacSync-LBS-TH-X1_Chirpstack.js
-│   ├── MacSync-LBS-TH-X1_Milesight.js
+│   ├── MacSync-LBS-TH-X1_TTN.js         (decodeUplink / encodeDownlink)
+│   ├── MacSync-LBS-TH-X1_Chirpstack.js  (ChirpStack v4)
+│   ├── MacSync-LBS-TH-X1_Milesight.js   (v3 style: Decode / Encode)
 │
 ├── Encoder/
-│   ├── MacSync-LBS-TH-X1_Encoder.js
+│   └── MacSync-LBS-TH-X1_Encoder.js     (standalone downlink encoder)
 │
 └── MacSync-LBS-TH-X1.md
+```
 
----
-
-## 🔄 Codec Overview
-
-| Type     | Direction | Purpose                          |
-|----------|----------|----------------------------------|
-| Decoder  | Uplink   | Bytes → JSON (sensor data)       |
-| Encoder  | Downlink | JSON → Bytes (device commands)   |
+Each platform file in `Decoder/` is **complete** — it contains both the uplink decoder and the downlink encoder, so one paste per platform is enough.
 
 ---
 
 ## 🔓 Decoder (Uplink)
 
-Converts raw LoRaWAN payload into readable JSON.
-
 ### ✅ Supported Platforms
-- TTN (The Things Network)
-- ChirpStack
-- Milesight Gateway
+- TTN (The Things Network) — `decodeUplink(input)`
+- ChirpStack v4 — `decodeUplink(input)`
+- Milesight Gateway (built-in NS) — `Decode(fPort, bytes)` / `Encode(fPort, obj)` — paste the whole file into both codec boxes
 
-### 📥 Input
-- Raw payload (HEX/Base64 / bytes)
+### 📦 Uplink Frame Types (by FPort)
 
-### 📤 Output (Example)
+| FPort | `type` | Content |
+|-------|--------|---------|
+| `2`   | `heartbeat` | temperature + humidity + battery + UTC |
+| `3`   | `sampling` | 2–12 buffered samples + battery + UTC |
+| `4`   | `trigger` | ALARM / CLEAR with value + min/max + battery + UTC |
+| `5`   | `boot` | FW version (3B) + HW version (3B) + UTC (4B) |
+| `16–21` | `config_ack` | Echo of the applied config downlink + battery |
+
+### 📤 Output (Example — heartbeat)
 ```json
 {
-  "temperature": 25.6,
-  "humidity": 60.2,
-  "battery": 100
+  "type": "heartbeat",
+  "deviceInfo": {
+    "fPort": 2,
+    "battery": 98,
+    "unixUTC": 1757923200,
+    "timeUTC": "2025-09-15T08:00:00Z",
+    "timeIST": "2025-09-15T13:30:00+05:30"
+  },
+  "sensorInfo": {
+    "temperature": 25.6,
+    "humidity": 60.2
+  }
 }
 ```
 
-## 🔓 Encoder (Downlink)
+### 📤 Output (Example — trigger alarm)
+```json
+{
+  "type": "trigger",
+  "deviceInfo": { "fPort": 4, "battery": 90, "unixUTC": 1757923200,
+                  "timeUTC": "2025-09-15T08:00:00Z", "timeIST": "2025-09-15T13:30:00+05:30",
+                  "trigNum": 1, "event": "ALARM" },
+  "sensorInfo": { "param": "temperature", "value": 42.5, "min": 10, "max": 40 }
+}
+```
 
-Converts JSON commands into encoded payload for device configuration.
+---
 
+## 🔒 Encoder (Downlink)
+
+JSON → bytes. **Put the port number in the JSON as `"port"` and set the same value as the downlink FPort** (the key `"fPort"` is also accepted). Every applied command is echoed back by the device as a `config_ack` uplink on the same port.
 
 ## 📌 MQTT Downlink Basics (ChirpStack v4)
 
@@ -70,67 +91,57 @@ application/{applicationId}/device/{devEui}/command/down
   "confirmed": true,
   "object": {
     "...": "payload fields",
-    "fPort": X
+    "port": X
   }
 }
 ```
 
 ---
 
-Every applied config is echoed back by the device as a `config_ack` uplink on the same port.
+## ⚙️ Downlink Commands
 
-## 1. Change Transmission Interval
-**FPort:** `16` — heartbeat interval in **seconds** (60–86400), unsigned 32-bit.
-
+### 1. Transmission Interval — **FPort 16**
+Heartbeat interval in **seconds** (60–86400).
 ```json
-{ "interval": 600, "fPort": 16 }
+{ "port": 16, "interval": 600 }
 ```
 
-### MQTT JSON Example
+**MQTT JSON Example**
 ```json
 {
   "devEui": "0080e11505ca2663",
   "confirmed": true,
   "object": {
-    "interval": 600,
-    "fPort": 16
+    "port": 16,
+    "interval": 600
   }
 }
 ```
 
-## 2. ADR On/Off
-**FPort:** `17` — device reboots to apply.
-
+### 2. ADR On/Off — **FPort 17** (device reboots to apply)
 ```json
-{ "adr": 1, "fPort": 17 }
+{ "port": 17, "adr": 1 }
 ```
 
-## 3. Message Type
-**FPort:** `18` — `0` = unconfirmed, `1` = confirmed.
-
+### 3. Message Type — **FPort 18** (`0` = unconfirmed, `1` = confirmed)
 ```json
-{ "msgtype": 1, "fPort": 18 }
+{ "port": 18, "msgtype": 1 }
 ```
 
-## 4. Message Info (ADR + SF + Message Type)
-**FPort:** `19` — `sf` is the spreading factor 7–12 (sent raw; firmware converts to DR). Device reboots to apply.
-
+### 4. Message Info — **FPort 19**
+ADR + spreading factor (`sf` 7–12) + message type. Device reboots to apply.
 ```json
-{ "adr": 0, "sf": 9, "msgtype": 1, "fPort": 19 }
+{ "port": 19, "adr": 0, "sf": 9, "msgtype": 1 }
 ```
 
-## 5. Trigger Configuration
-**FPort:** `20`
-- `trig`: 1 or 2 · `param`: `0` = temperature, `1` = humidity
-- `min` / `max`: threshold window (2 decimals) · `checktime`: seconds · `enable`: 0/1
-
+### 5. Trigger Configuration — **FPort 20**
+`trig` 1 or 2 · `param` `0` = temperature, `1` = humidity · `min`/`max` threshold window · `checktime` seconds · `enable` 0/1
 ```json
-{ "trig": 1, "param": 0, "min": 10.00, "max": 40.00, "checktime": 60, "enable": 1, "fPort": 20 }
+{ "port": 20, "trig": 1, "param": 0, "min": 10.00, "max": 40.00, "checktime": 60, "enable": 1 }
 ```
 
-## 6. Sampling Configuration
-**FPort:** `21` — `param`: `0` = temperature, `1` = humidity, `2` = both · `count`: 2–12 · `enable`: 0/1
-
+### 6. Sampling Configuration — **FPort 21**
+`param` `0` = temperature, `1` = humidity, `2` = both · `count` 2–12 · `enable` 0/1
 ```json
-{ "param": 2, "count": 6, "enable": 1, "fPort": 21 }
+{ "port": 21, "param": 2, "count": 6, "enable": 1 }
 ```

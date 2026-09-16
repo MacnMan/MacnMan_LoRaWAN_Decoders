@@ -21,35 +21,37 @@ Each device folder contains:
 
 ```
 <Device>/
-├── Decoder/          uplink codec, one file per platform
+├── Decoder/          complete codec (uplink decoder + downlink encoder), one file per platform
 │   ├── <Device>_TTN.js
 │   ├── <Device>_Chirpstack.js
 │   └── <Device>_Milesight.js
-├── Encoder/          downlink codec
+├── Encoder/          standalone downlink encoder (reference copy)
 │   └── <Device>_Encoder.js
 └── <Device>.md       payload format + downlink command reference
 ```
 
+Each file in `Decoder/` is **complete** — it contains both the uplink decoder and the downlink encoder, so one paste per platform is enough.
+
 ### TTN (The Things Stack)
 1. Console → *Applications → your app → Payload formatters → Uplink*.
-2. Select **Custom Javascript formatter** and paste the `_TTN.js` decoder.
-3. For downlinks, paste the Encoder file into the *Downlink* formatter.
+2. Select **Custom Javascript formatter** and paste the whole `_TTN.js` file.
+3. Paste the same file into the *Downlink* formatter (it contains `encodeDownlink`).
 
 ### ChirpStack v4
 1. *Device profile → Codec → JavaScript functions*.
-2. Paste the `_Chirpstack.js` decoder (and the Encoder file below it — `decodeUplink` / `encodeDownlink` live side by side).
+2. Paste the whole `_Chirpstack.js` file.
 3. Queue downlinks via MQTT on `application/{applicationId}/device/{devEui}/command/down` — see each device's `.md` for the JSON commands.
 
 ### Milesight Gateway (UG63 / UG65 / UG67, built-in NS)
 1. *Network Server → Profiles → device profile → Payload Codec → Custom*.
-2. Paste the `_Milesight.js` file into the decoder (and encoder) box.
+2. Paste the whole `_Milesight.js` file into **both** the decoder box and the encoder box.
 
 ---
 
 ## 🔄 Codec Conventions
 
-- **Uplink JSON** contains `deviceInfo` (battery, UTC + IST timestamps, fPort) and `sensorInfo` (readings).
-- **Downlink JSON** always carries the target `fPort` — see each device's `.md` for the full command table. Every applied config is echoed back by the device on the same port.
+- **Uplink JSON** contains `type` (heartbeat / sampling / trigger / boot / config_ack / …), `deviceInfo` (battery, UTC + IST timestamps, fPort) and `sensorInfo` (readings).
+- **Downlink JSON** carries the target port as `"port"` (the key `"fPort"` also works) — see each device's `.md` for the full command table. Every applied command is echoed back by the device on the same port.
 - Timestamps are Unix UTC seconds, big-endian on the wire.
 
 ---

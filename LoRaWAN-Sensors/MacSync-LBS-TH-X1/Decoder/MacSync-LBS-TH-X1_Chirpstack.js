@@ -212,7 +212,8 @@ function encodeDownlink(input) {
   var d = input.data;
   // ChirpStack may not pass input.fPort into encodeDownlink reliably,
   // so accept a "port" field in the JSON as the primary source.
-  var fport = (d && d.port !== undefined) ? d.port : input.fPort;
+  var fport = (d && d.port !== undefined) ? d.port :
+              (d && d.fPort !== undefined) ? d.fPort : input.fPort;
   var bytes = [];
 
   switch (fport) {

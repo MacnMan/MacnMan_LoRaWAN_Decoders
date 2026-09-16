@@ -21,7 +21,8 @@ function encodeDownlink(input) {
   var d = input.data || {};
   // ChirpStack does not reliably pass input.fPort here, so read "port" from
   // the JSON first (set it equal to the FPort field), fall back to input.fPort.
-  var port = (d.port !== undefined) ? d.port : input.fPort;
+  var port = (d.port !== undefined) ? d.port :
+             (d.fPort !== undefined) ? d.fPort : input.fPort;
   function u16b(v){ return [(v >> 8) & 0xFF, v & 0xFF]; }
   function u32b(v){ return [(v>>>24)&0xFF,(v>>>16)&0xFF,(v>>>8)&0xFF,v&0xFF]; }
   var bytes = [];
