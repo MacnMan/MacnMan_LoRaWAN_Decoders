@@ -1,49 +1,43 @@
 // ===================================================================
-// MacSync_LBD_STD_X1_RS485 — RS485 (Modbus RTU) / Analog to LoRaWAN Datalogger
-// Macnman Technologies Pvt. Ltd.
-//
-// UPLINK ports:
-//   0x02 (2)  sensor data (RS485 sweep or analog channels)
-//   0x03 (3)  multi-sample batch (float32 samples)
-//   0x04 (4)  trigger ALARM / CLEAR
-//   0x05 (5)  boot (firmware/hardware version + UTC)
-//   0x10-0x15 (16-21) config ACK — echo of an applied config downlink
-//   8 / 9 / 10 / 12 / 13 / 15  Modbus command replies (same port as downlink)
-//
-// DOWNLINK ports (see the matching Encoder file):
-//   16 TXinterval, 17 ADR, 18 MsgType, 19 MSGINFO(adr+sf+msgtype),
-//   20 TrigCfg, 21 SampCfg, 10 Modbus field config, 15 field read-back,
-//   13 live register read, 9 register write, 8 coil write, 12 baud+parity
+// ChirpStack v4 Codec - MacSync_LBD_STD_X1 RS485 / ANALOG node
+// UPLINK ports: 0x02 heartbeat (RS485 or analog), 0x03 sampling,
+//               0x04 trigger, 0x05 boot, 0x10-0x15 config-ACK,
+//               8/9/10/12/13/15 RS485/Modbus downlink replies
+// DOWNLINK ports (encodeDownlink):
+//   Modbus : 8 coil-write, 9 reg-write, 10 field-config, 12 baud,
+//            13 reg-read, 15 field-read
+//   Config : 16 tx-interval, 17 adr, 18 msgtype, 19 msginfo,
+//            20 trigger, 21 sampling
+// Output shape:
+//   type       : heartbeat | sampling | trigger | boot | config_ack | modbus_ack
+//   deviceInfo : { fPort, source, battery, unixUTC, timeUTC, timeIST, ... }
+//   sensorInfo : readings ; modbusAck : downlink-reply details
 // ===================================================================
 
 var IST_OFFSET = 19800;   // +5:30 in seconds
 
-// ---- helpers ----------------------------------------------------
-function u16(b, i) { return ((b[i] << 8) | b[i + 1]) >>> 0; }
-function s16(b, i) {
-  var v = (b[i] << 8) | b[i + 1];
-  return (v & 0x8000) ? v - 0x10000 : v;
-}
-function u32(b, i) {
-  return ((b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3]) >>> 0;
-}
-function s32(b, i) {
-  return (b[i] << 24) | (b[i + 1] << 16) | (b[i + 2] << 8) | b[i + 3];
-}
-// IEEE-754 float32 from a big-endian uint32 (no DataView — keeps the codec
-// portable across TTN / ChirpStack / Milesight JS engines)
-function f32FromU32(u) {
+// ---- byte helpers ----------------------------------------------
+function u16(b, i) { return (b[i] << 8) | b[i + 1]; }
+function i16(b, i) { var v = u16(b, i); return (v & 0x8000) ? v - 0x10000 : v; }
+function u32(b, i) { return ((b[i] << 24) >>> 0) + (b[i+1] << 16) + (b[i+2] << 8) + b[i+3]; }
+function pad(n) { return ("0" + n).slice(-2); }
+function fx2(v) { return v.toFixed(2); }                 // 5 -> "5.00"
+function chAB(n) { return (n === 1) ? "A" : (n === 2) ? "B" : ("" + n); }
+function stateText(s) { return (s === 0) ? "ok" : (s === 2) ? "invalid" : "failed"; }
+
+// IEEE-754 float32 by hand (works on every ChirpStack JS runtime)
+function f32(u) {
   var sign = (u >>> 31) ? -1 : 1;
-  var exp = (u >>> 23) & 0xFF;
-  var man = u & 0x7FFFFF;
-  if (exp === 0xFF) return man ? NaN : sign * Infinity;
-  if (exp === 0) return sign * man * Math.pow(2, -149);
+  var exp  = (u >>> 23) & 0xFF;
+  var man  = u & 0x7FFFFF;
+  if (exp === 0)   { return sign * man * Math.pow(2, -149); }
+  if (exp === 255) { return man ? NaN : sign * Infinity; }
   return sign * (man + 0x800000) * Math.pow(2, exp - 150);
 }
-function round2(v) { return Math.round(v * 100) / 100; }
-function pad(n) { return ("0" + n).slice(-2); }
 
+// ISO string with explicit offset; "not synced" when time is 0.
 function isoString(unixSec, offsetSec) {
+  if (!unixSec) { return "not synced"; }
   var d = new Date((unixSec + offsetSec) * 1000);
   var s = d.getUTCFullYear() + "-" + pad(d.getUTCMonth() + 1) + "-" +
           pad(d.getUTCDate()) + "T" + pad(d.getUTCHours()) + ":" +
@@ -51,54 +45,76 @@ function isoString(unixSec, offsetSec) {
   return offsetSec === 0 ? s + "Z" : s + "+05:30";
 }
 
-function buildDeviceInfo(fPort, battery, unixUTC) {
-  return {
-    fPort:   fPort,
-    battery: battery,
-    unixUTC: unixUTC,
-    timeUTC: isoString(unixUTC, 0),
-    timeIST: isoString(unixUTC, IST_OFFSET)
-  };
+// Common deviceInfo block. source may be null (trigger/boot/modbus carry no flag).
+function buildDeviceInfo(fPort, source, battery, unixUTC) {
+  var di = { fPort: fPort };
+  if (source !== null && source !== undefined) { di.source = source; }
+  di.battery = battery;
+  di.unixUTC = unixUTC;
+  di.timeUTC = isoString(unixUTC, 0);
+  di.timeIST = isoString(unixUTC, IST_OFFSET);
+  return di;
 }
 
-// Modbus register data types (firmware AT+MODCONF dataType 0..7)
-var MODBUS_TYPES = [
-  "int16", "uint16",
-  "int32", "int32_ws",      // _ws = word-swapped (LSB word first)
-  "float32", "float32_ws",
-  "uint32_ws", "uint32"
-];
+var TYPE_NAME = ["int16", "uint16", "int32", "int32_swapped",
+                 "float32", "float32_swapped", "uint32_swapped", "uint32"];
+// analog mode: 1 = 4-20mA, 2 = 0-10V, 3 = digital
+var ANALOG_MODE = ["off", "4-20mA", "0-10V", "digital"];
 
-// Decode `count` register values of `dataType` starting at b[i].
-// Returns { values: [...], next: index-after-block }.
-function readRegisterValues(b, i, dataType, count) {
-  var values = [];
-  var wide = (dataType >= 2);              // 32-bit types use 4 bytes
-  for (var k = 0; k < count; k++) {
-    var v;
-    if (!wide) {
-      v = (dataType === 0) ? s16(b, i) : u16(b, i);
-      i += 2;
-    } else {
-      var raw;
-      if (dataType === 3 || dataType === 5 || dataType === 6) {
-        // word-swapped: LSB word transmitted first
-        raw = ((b[i + 2] << 24) | (b[i + 3] << 16) | (b[i] << 8) | b[i + 1]) >>> 0;
-      } else {
-        raw = u32(b, i);
-      }
-      if (dataType === 2 || dataType === 3) {
-        v = raw | 0;                       // signed int32
-      } else if (dataType === 4 || dataType === 5) {
-        v = round2(f32FromU32(raw));       // float32
-      } else {
-        v = raw;                           // uint32
-      }
-      i += 4;
-    }
-    values.push(v);
+function decodeValue(type, b, i) {
+  switch (type) {
+    case 0: return i16(b, i);
+    case 1: return u16(b, i);
+    case 2: return (u32(b, i) | 0);
+    case 3: return ((((b[i+2]<<24)>>>0) + (b[i+3]<<16) + (b[i]<<8) + b[i+1]) | 0);
+    case 4: return f32(u32(b, i));
+    case 5: return f32(((b[i+2]<<24)>>>0) + (b[i+3]<<16) + (b[i]<<8) + b[i+1]);
+    case 6: return (((b[i+2]<<24)>>>0) + (b[i+3]<<16) + (b[i]<<8) + b[i+1]) >>> 0;
+    case 7: return u32(b, i);
   }
-  return { values: values, next: i };
+  return null;
+}
+
+// Analog heartbeat: returns {channels, battery, unixUTC}. Starts at byte 2.
+function decodeAnalogChannels(b) {
+  var i = 2, chans = [];
+  for (var ch = 1; ch <= 2; ch++) {
+    if (i >= b.length) { break; }
+    var chLabel = chAB(ch);
+    var t = b[i++];
+    if (t === 0) {
+      chans.push({ channel: chLabel, sensor_type: "off", status: "not_configured" });
+      continue;
+    }
+    if (t > 3 || i + 2 > b.length) {
+      chans.push({ channel: chLabel, sensor_type: "invalid", status: "bad_type", type_raw: t });
+      continue;
+    }
+    var val = u16(b, i) / 1000; i += 2;          // firmware sends value x1000
+    var o = { channel: chLabel, sensor_type: ANALOG_MODE[t], status: "ok" };
+    if (t === 1) {                                // 4-20 mA
+      o.current_mA = fx2(val);
+      if (val < 3.5)  { o.fault = "under_range"; }
+      if (val > 20.5) { o.fault = "over_range";  }
+    } else if (t === 2) {                         // 0-10 V
+      o.voltage_V = fx2(val);
+    } else if (t === 3) {                         // digital 0/1
+      o.digital = (val >= 0.5) ? 1 : 0;
+      o.state   = (val >= 0.5) ? "HIGH" : "LOW";
+    }
+    chans.push(o);
+  }
+  var battery = (i < b.length) ? b[i++] : null;
+  var unixUTC = (i + 4 <= b.length) ? u32(b, i) : 0;
+  return { channels: chans, battery: battery, unixUTC: unixUTC };
+}
+
+// Modbus downlink-reply deviceInfo: UTC is the last 4 bytes, no battery.
+function modbusDeviceInfo(fPort, b) {
+  var utc = u32(b, b.length - 4);
+  var di = buildDeviceInfo(fPort, null, null, utc);
+  delete di.battery;
+  return di;
 }
 
 // ===================================================================
@@ -109,254 +125,279 @@ function decodeUplink(input) {
   var fPort = input.fPort;
   var data = {};
 
-  // ============ PORT 0x05 : BOOT (device info, 10 bytes) ============
-  if (fPort === 0x05) {
+  // ---------- Port 0x02 : heartbeat (RS485 or analog) ----------
+  if (fPort === 0x02) {
+    if (b.length < 7) { return { data: { type: "error", error: "short payload" } }; }
+
+    if (b[1] === 1) {                          // ---- analog ----
+      var a = decodeAnalogChannels(b);
+      data.type = "heartbeat";
+      data.deviceInfo = buildDeviceInfo(fPort, "analog", a.battery, a.unixUTC);
+      data.sensorInfo = { channels: a.channels };
+      return { data: data };
+    }
+
+    // ---- RS485 field sweep ----
+    var end = b.length - 5;
+    var i = 2, slot = 1, flds = [], ok = 0, off = 0, failed = 0;
+    while (i < end) {
+      var tag = b[i++];
+      var type = (tag >> 5) & 0x07;
+      var cnt  = tag & 0x1F;
+      if (cnt === 0) {
+        if (type === 6)      { flds.push({ field: slot++, status: "disabled" });   off++;    }
+        else if (type === 7) { flds.push({ field: slot++, status: "read_error" }); failed++; }
+        else                 { flds.push({ field: slot++, status: "empty" }); }
+        continue;
+      }
+      var width = (type <= 1) ? 2 : 4;
+      var vals = [];
+      for (var k = 0; k < cnt; k++) {
+        if (i + width > end) { break; }
+        vals.push(decodeValue(type, b, i));
+        i += width;
+      }
+      flds.push({ field: slot++, status: "ok", data_type: TYPE_NAME[type], values: vals });
+      ok++;
+    }
+    data.type = "heartbeat";
+    data.deviceInfo = buildDeviceInfo(fPort, "rs485", b[b.length - 5], u32(b, b.length - 4));
+    data.sensorInfo = { fields: flds, fields_ok: ok, fields_off: off, fields_failed: failed };
+    return { data: data };
+  }
+
+  // ---------- Port 0x03 : sampling batch ----------
+  if (fPort === 0x03) {
+    var n = b[0], source = b[1], marker = b[2];
+    var srcName = (source === 1) ? "analog" : "rs485";
+    var si = { sample_count: n };
+    var p, batt, utc;
+
+    if (marker === 0) {                        // BOTH: two streams
+      var tA = b[3], tB = b[4]; p = 5;
+      var s1 = [], s2 = [];
+      for (var s = 0; s < n; s++) { s1.push(fx2(f32(u32(b, p)))); p += 4; }
+      for (var s = 0; s < n; s++) { s2.push(fx2(f32(u32(b, p)))); p += 4; }
+      if (source === 1) {
+        si.channels = [
+          { channel: "A", sensor_type: ANALOG_MODE[tA] || "unknown", samples: s1 },
+          { channel: "B", sensor_type: ANALOG_MODE[tB] || "unknown", samples: s2 }
+        ];
+      } else {
+        si.fields = [
+          { field: 1, data_type: TYPE_NAME[tA] || "unknown", samples: s1 },
+          { field: 2, data_type: TYPE_NAME[tB] || "unknown", samples: s2 }
+        ];
+      }
+    } else {                                   // SINGLE: one stream
+      var idx = marker, dtype = b[3]; p = 4;
+      var samples = [];
+      for (var s = 0; s < n; s++) { samples.push(fx2(f32(u32(b, p)))); p += 4; }
+      if (source === 1) { si.channel = chAB(idx); si.sensor_type = ANALOG_MODE[dtype] || "unknown"; }
+      else              { si.field = idx;        si.data_type   = TYPE_NAME[dtype]   || "unknown"; }
+      si.samples = samples;
+    }
+    batt = b[p]; utc = u32(b, p + 1);
+    data.type = "sampling";
+    data.deviceInfo = buildDeviceInfo(fPort, srcName, batt, utc);
+    data.sensorInfo = si;
+    return { data: data };
+  }
+
+  // ---------- Port 0x04 : trigger alarm / clear ----------
+  // 15-byte frame: [0]trig [1]param [2]event [3-4]value [5-6]min [7-8]max
+  //                [9]battery [10-13]UTC [14]source (0=RS485, 1=analog).
+  // Old 14-byte frames (no source byte) fall back to the combined label.
+  if (fPort === 0x04 && b.length >= 14) {
+    data.type = "trigger";
+    var devType = (b.length >= 15) ? b[14] : null;   // 0=rs485, 1=analog, null=old fw
+    var pNum = (b[1] === 1) ? 2 : 1;                 // field / channel number
+    var pLabel;
+    if (devType === 1)      { pLabel = "Channel " + (pNum === 1 ? "A" : "B"); }
+    else if (devType === 0) { pLabel = "Field " + pNum; }
+    else                    { pLabel = (b[1] === 1) ? "Field 2 / Channel B" : "Field 1 / Channel A"; }
+
+    var src = (devType === 1) ? "analog" : (devType === 0) ? "rs485" : null;
+    data.deviceInfo = buildDeviceInfo(fPort, src, b[9], u32(b, 10));
+    data.deviceInfo.trigNum = b[0];
+    data.deviceInfo.event   = (b[2] === 1) ? "ALARM" : "CLEAR";
+    data.sensorInfo = {
+      param: pLabel,
+      value: fx2(i16(b, 3) / 100),
+      min:   fx2(i16(b, 5) / 100),
+      max:   fx2(i16(b, 7) / 100)
+    };
+    return { data: data };
+  }
+
+  // ---------- Port 0x05 : boot info (no battery) ----------
+  if (fPort === 0x05 && b.length >= 10) {
     data.type = "boot";
-    data.deviceInfo = buildDeviceInfo(fPort, null, u32(b, 6));
-    delete data.deviceInfo.battery;                 // boot has no battery byte
+    data.deviceInfo = buildDeviceInfo(fPort, null, null, u32(b, 6));
+    delete data.deviceInfo.battery;
     data.deviceInfo["Firmware Version"] = b[0] + "." + b[1] + "." + b[2];
     data.deviceInfo["Hardware Version"] = b[3] + "." + b[4] + "." + b[5];
     return { data: data };
   }
 
-  // ============ PORT 0x02 : SENSOR DATA (heartbeat / ping) ============
-  if (fPort === 0x02) {
-    data.type = "heartbeat";
-    var source = b[1];                               // [1] 0=RS485, 1=analog
-    data.source = (source === 1) ? "analog" : "rs485";
-
-    var battery = b[b.length - 5];
-    var unixUTC = u32(b, b.length - 4);
-    data.deviceInfo = buildDeviceInfo(fPort, battery, unixUTC);
-
-    if (source === 1) {
-      // ---- analog: [mode u8, value s16 x1000] per channel, 0x00 = off ----
-      var chIdx = 2;
-      var channels = {};
-      for (var ch = 1; ch <= 2; ch++) {
-        if (b[chIdx] === 0x00) {
-          channels["channel" + ch] = { mode: "off" };
-          chIdx += 1;
-        } else {
-          var mode = b[chIdx];
-          var val = s16(b, chIdx + 1) / 1000;
-          channels["channel" + ch] =
-            (mode === 1) ? { mode: "4-20mA",  value_mA:    round2(val) } :
-            (mode === 2) ? { mode: "0-10V",   value_V:     round2(val) } :
-                           { mode: "digital", value:       (val >= 1) ? 1 : 0 };
-          chIdx += 3;
-        }
-      }
-      data.sensorInfo = channels;
-    } else {
-      // ---- RS485: tag byte per configured field, then register bytes ----
-      // tag = (dataType << 5) | count;  count==0 -> status marker
-      var fields = [];
-      var i = 2;
-      var fieldNum = 0;
-      var end = b.length - 5;                        // battery + UTC trailer
-      while (i < end) {
-        fieldNum += 1;
-        var tag = b[i]; i += 1;
-        var dataType = (tag >> 5) & 0x07;
-        var count = tag & 0x1F;
-        if (count === 0) {
-          fields.push({
-            field: fieldNum,
-            status: (dataType === 0x07) ? "read_error" : "disabled"
-          });
-          continue;
-        }
-        var block = readRegisterValues(b, i, dataType, count);
-        i = block.next;
-        fields.push({
-          field: fieldNum,
-          dataType: MODBUS_TYPES[dataType],
-          values: block.values
-        });
-      }
-      data.sensorInfo = { fields: fields };
-    }
-    return { data: data };
-  }
-
-  // ============ PORT 0x03 : MULTI-SAMPLE BATCH (float32) ============
-  if (fPort === 0x03) {
-    data.type = "sampling";
-
-    var count3 = b[0];
-    var src3 = b[1];                                 // 0=RS485 field, 1=analog
-    var sel = b[2];                                  // 0=both, 1, 2
-    var idx3, types = [];
-    if (sel === 0) {
-      types = [b[3], b[4]];
-      idx3 = 5;
-    } else {
-      types = [b[3]];
-      idx3 = 4;
-    }
-
-    function typeName(t) {
-      if (src3 === 1) {
-        return (t === 1) ? "4-20mA" : (t === 2) ? "0-10V" : (t === 3) ? "digital" : "type" + t;
-      }
-      return MODBUS_TYPES[t] || ("type" + t);
-    }
-
-    var streams = [];
-    var streamCount = (sel === 0) ? 2 : 1;
-    for (var s = 0; s < streamCount; s++) {
-      var samples = [];
-      for (var n = 0; n < count3; n++) {
-        samples.push(round2(f32FromU32(u32(b, idx3))));
-        idx3 += 4;
-      }
-      streams.push({
-        channel: (sel === 0) ? (s + 1) : sel,
-        dataType: typeName(types[s]),
-        samples: samples
-      });
-    }
-
-    var battery3 = b[idx3]; idx3 += 1;
-    var unix3 = u32(b, idx3);
-
-    data.deviceInfo = buildDeviceInfo(fPort, battery3, unix3);
-    data.sensorInfo = {
-      source: (src3 === 1) ? "analog" : "rs485",
-      count: count3,
-      streams: streams
-    };
-    return { data: data };
-  }
-
-  // ============ PORT 0x04 : TRIGGER ALARM / CLEAR (15 bytes) ============
-  // [0]trig [1]param [2]event [3-4]value [5-6]min [7-8]max
-  // [9]battery [10-13]UTC [14]source
-  if (fPort === 0x04) {
-    data.type = "trigger";
-    data.deviceInfo = buildDeviceInfo(fPort, b[9], u32(b, 10));
-    data.deviceInfo.trigNum = b[0];
-    data.deviceInfo.event = (b[2] === 1) ? "ALARM" : "CLEAR";
-    var trigSrc = (b[14] === 1) ? "analog" : "rs485";
-    data.sensorInfo = {
-      source: trigSrc,
-      param: ((trigSrc === "analog") ? "channel" : "field") + (b[1] + 1),
-      value: s16(b, 3) / 100,
-      min:   s16(b, 5) / 100,
-      max:   s16(b, 7) / 100
-    };
-    return { data: data };
-  }
-
-  // ====== PORTS 0x10..0x15 : CONFIG ACK (echo of applied downlink) ======
+  // ---------- Ports 0x10-0x15 : config ACK (echo) ----------
   if (fPort >= 0x10 && fPort <= 0x15) {
     var ack = { appliedPort: fPort };
-
-    if (fPort === 0x10) {                    // interval u32 + batt
-      ack.feature  = "tx_interval";
-      ack.interval = u32(b, 0);
-      ack.battery  = b[4];
-
-    } else if (fPort === 0x11) {             // adr + batt
-      ack.feature = "adr";
-      ack.adr     = (b[0] === 1) ? "ON" : "OFF";
-      ack.battery = b[1];
-
-    } else if (fPort === 0x12) {             // msgtype + batt
-      ack.feature = "msg_type";
-      ack.msgtype = (b[0] === 1) ? "CONFIRMED" : "UNCONFIRMED";
-      ack.battery = b[1];
-
-    } else if (fPort === 0x13) {             // adr, SF, msgtype + batt
-      ack.feature = "msg_info";
-      ack.adr     = (b[0] === 1) ? "ON" : "OFF";
-      ack.sf      = b[1];
-      ack.msgtype = (b[2] === 1) ? "CONFIRMED" : "UNCONFIRMED";
-      ack.battery = b[3];
-
-    } else if (fPort === 0x14) {  // trig,param,min,max,ct,en,source + batt
-      ack.feature   = "trigger";
-      ack.trig      = b[0];
-      ack.param     = "field_or_channel_" + (b[1] + 1);
-      ack.min       = s16(b, 2) / 100;
-      ack.max       = s16(b, 4) / 100;
-      ack.checktime = u16(b, 6);
-      ack.enable    = (b[8] === 1) ? "ENABLED" : "DISABLED";
-      ack.source    = (b[9] === 1) ? "analog" : "rs485";
-      ack.battery   = b[10];
-
-    } else {                     // 0x15: param,count,en,source,interval + batt
-      ack.feature  = "sampling";
-      ack.param    = (b[0] === 2) ? "both" : "field_or_channel_" + (b[0] + 1);
-      ack.count    = b[1];
-      ack.enable   = (b[2] === 1) ? "ENABLED" : "DISABLED";
-      ack.source   = (b[3] === 1) ? "analog" : "rs485";
-      ack.interval = u16(b, 4);
-      ack.battery  = b[6];
+    if (fPort === 0x10) {
+      ack.feature = "tx_interval"; ack.interval = u32(b, 0); ack.battery = b[4];
+    } else if (fPort === 0x11) {
+      ack.feature = "adr"; ack.adr = (b[0] === 1) ? "ON" : "OFF"; ack.battery = b[1];
+    } else if (fPort === 0x12) {
+      ack.feature = "msg_type"; ack.msgtype = (b[0] === 1) ? "CONFIRMED" : "UNCONFIRMED"; ack.battery = b[1];
+    } else if (fPort === 0x13) {
+      ack.feature = "msg_info"; ack.adr = (b[0] === 1) ? "ON" : "OFF"; ack.sf = b[1];
+      ack.msgtype = (b[2] === 1) ? "CONFIRMED" : "UNCONFIRMED"; ack.battery = b[3];
+       } else if (fPort === 0x14) {
+      ack.feature = "trigger"; ack.trig = b[0];
+      var td = (b.length >= 11) ? b[9] : null;        // source byte (new fw), null = old
+      var tp = (b[1] === 1) ? 2 : 1;                  // field / channel number
+      ack.param = (td === 1) ? ("Channel " + (tp === 1 ? "A" : "B"))
+                : (td === 0) ? ("Field " + tp)
+                : ((b[1] === 1) ? "Field 2 / Channel B" : "Field 1 / Channel A");
+      if (td !== null) { ack.source = (td === 1) ? "analog" : "rs485"; }
+      ack.min = fx2(i16(b, 2) / 100); ack.max = fx2(i16(b, 4) / 100);
+      ack.checktime = u16(b, 6); ack.enable = (b[8] === 1) ? "ENABLED" : "DISABLED";
+      ack.battery = (b.length >= 11) ? b[10] : b[9];  // battery moves +1 when source byte present
+    } else {                                   // 0x15 sampling
+      ack.feature = "sampling";
+      var sd = (b.length >= 5) ? b[3] : null;        // source byte (new fw)
+      if (b[0] === 2) { ack.param = "both"; }
+      else {
+        var sn = (b[0] === 1) ? 2 : 1;
+        ack.param = (sd === 1) ? ("Channel " + (sn === 1 ? "A" : "B"))
+                  : (sd === 0) ? ("Field " + sn)
+                  : ((b[0] === 1) ? "Field 2 / Channel B" : "Field 1 / Channel A");
+      }
+      if (sd !== null) { ack.source = (sd === 1) ? "analog" : "rs485"; }
+      ack.count = b[1];
+      ack.enable = (b[2] === 1) ? "ENABLED" : "DISABLED";
+      if (b.length >= 7)      { ack.interval = u16(b, 4); ack.battery = b[6]; }  // source + interval
+      else if (b.length >= 5) { ack.battery = b[4]; }                            // source only
+      else                    { ack.battery = b[3]; }                            // old firmware
     }
-
     data.type = "config_ack";
     data.configAck = ack;
     return { data: data };
   }
 
-  // ====== MODBUS REPLY PORTS 8 / 9 / 10 / 12 / 13 / 15 ======
-  // Frame: [0]=2 [1]=0x02 [2]=port [3]=state ... then UTC (last 4 bytes)
+  // ---------- Ports 8,9,10,12,13,15 : RS485/Modbus downlink replies ----------
+  // Reply layout: [0]=2 [1]=0x02 [2]=port [3]=state <feature...> UTC(4).
+  // state: 0 ok, 1 failed, 2 invalid.
   if (fPort === 8 || fPort === 9 || fPort === 10 ||
       fPort === 12 || fPort === 13 || fPort === 15) {
+    data.type = "modbus_ack";
+    data.deviceInfo = modbusDeviceInfo(fPort, b);
+    var st = b[3];
+    var m = { state: st, state_text: stateText(st) };
 
-    var reply = {
-      port:  b[2],
-      state: (b[3] === 0) ? "OK" : (b[3] === 2) ? "BAD_INDEX" : "ERROR"
-    };
-    var unixR = u32(b, b.length - 4);
-
-    if (fPort === 10 || fPort === 15) {      // field config write / read-back
-      reply.feature   = (fPort === 10) ? "modbus_field_config" : "modbus_field_read";
-      reply.index     = b[4];
-      reply.slaveId   = b[5];
-      reply.functionCode = b[6];
-      reply.enable    = b[7];
-      reply.dataType  = MODBUS_TYPES[b[8]] || b[8];
-      reply.numberOfParameters = b[9];
-      reply.registerAddress = u16(b, 10);
-
-    } else if (fPort === 8 || fPort === 9) { // coil / register write echo
-      reply.feature = (fPort === 8) ? "modbus_coil_write" : "modbus_register_write";
-      reply.slaveId = b[4];
-      reply.numberOfRegisters = b[5];
-      reply.registerAddress = u16(b, 6);
-      reply.value = s16(b, 8);
-
-    } else if (fPort === 12) {               // baud + parity echo
-      reply.feature = "modbus_baud";
-      reply.baud    = u16(b, 4);
-      reply.parity  = b[6];
-
-    } else {                                 // 13: live register read
-      reply.feature = "modbus_register_read";
-      var tag13 = b[4];
-      var dt13 = (tag13 >> 5) & 0x07;
-      var cnt13 = tag13 & 0x1F;
-      if (cnt13 === 0) {
-        reply.readState = "read_error";
+    if (fPort === 10 || fPort === 15) {          // field config: write / read-back
+      m.feature   = (fPort === 10) ? "field_config_set" : "field_config_read";
+      m.index     = b[4];
+      m.slaveId   = b[5];
+      m.fc        = b[6];
+      m.enable    = b[7];
+      m.data_type = TYPE_NAME[b[8]] || ("type" + b[8]);
+      m.numParams = b[9];
+      m.address   = u16(b, 10);
+    } else if (fPort === 8 || fPort === 9) {     // coil write / register write
+      m.feature = (fPort === 8) ? "coil_write" : "register_write";
+      m.slaveId = b[4];
+      m.numReg  = b[5];
+      m.address = u16(b, 6);
+      m.value   = u16(b, 8);
+    } else if (fPort === 13) {                   // live register read
+      m.feature = "register_read";
+      var rtag = b[4];
+      var rt = (rtag >> 5) & 0x07, rc = rtag & 0x1F;
+      if (rt === 7 && rc === 0) {
+        m.read = "error";
       } else {
-        reply.dataType = MODBUS_TYPES[dt13];
-        reply.values = readRegisterValues(b, 5, dt13, cnt13).values;
+        m.data_type = TYPE_NAME[rt] || ("type" + rt);
+        var w = (rt <= 1) ? 2 : 4, vals2 = [], q = 5;
+        for (var mm = 0; mm < rc; mm++) { vals2.push(decodeValue(rt, b, q)); q += w; }
+        m.values = vals2;
       }
+    } else if (fPort === 12) {                   // baud + parity
+      m.feature = "baud";
+      m.baud    = u16(b, 4);
+      m.parity  = b[6];
     }
 
-    data.type = "modbus_reply";
-    data.deviceInfo = buildDeviceInfo(fPort, null, unixR);
-    delete data.deviceInfo.battery;
-    data.modbusReply = reply;
+    data.modbusAck = m;
     return { data: data };
   }
 
-  // ============ Unknown port ============
-  return {
-    data: { fPort: fPort },
-    warnings: ["Unknown fPort " + fPort]
-  };
+  // ---------- Unknown port ----------
+  return { data: { fPort: fPort }, warnings: ["Unknown fPort " + fPort] };
+}
+
+// ===================================================================
+// DOWNLINK ENCODER  (JSON -> bytes; set "port" in the JSON = FPort field)
+//   Modbus:
+//     8  {"port":8,"slaveId":1,"numReg":1,"address":1,"value":1}
+//     9  {"port":9,"slaveId":1,"numReg":1,"address":1,"value":1234}  // numReg:2 -> 32-bit
+//     10 {"port":10,"index":1,"slaveId":1,"fc":4,"enable":1,"dataType":1,"numParams":2,"address":1}
+//     12 {"port":12,"baud":9600,"parity":0}
+//     13 {"port":13,"slaveId":1,"fc":4,"dataType":1,"numParams":2,"address":1}
+//     15 {"port":15,"index":1}
+//   Config:
+//     16 {"port":16,"interval":300}
+//     17 {"port":17,"adr":1}
+//     18 {"port":18,"msgtype":1}
+//     19 {"port":19,"adr":1,"sf":7,"msgtype":1}
+//     20 {"port":20,"trig":1,"param":0,"min":2.2,"max":6.6,"checktime":30,"enable":1}
+//     21 {"port":21,"param":0,"count":2,"enable":1}
+// ===================================================================
+function encodeDownlink(input) {
+  var d = input.data || {};
+  // ChirpStack does not reliably pass input.fPort here, so read "port" from
+  // the JSON first (set it equal to the FPort field), fall back to input.fPort.
+  var port = (d.port !== undefined) ? d.port : input.fPort;
+  function u16b(v){ return [(v >> 8) & 0xFF, v & 0xFF]; }
+  function u32b(v){ return [(v>>>24)&0xFF,(v>>>16)&0xFF,(v>>>8)&0xFF,v&0xFF]; }
+  var bytes = [];
+  switch (port) {
+    // ---- Modbus / RS485 ----
+    case 12:  bytes = u16b(d.baud & 0xFFFF).concat([d.parity & 0xFF]); break; // baud + parity
+    case 10:  bytes = [d.index&0xFF, d.slaveId&0xFF, d.fc&0xFF, d.enable&0xFF,
+                       d.dataType&0xFF, d.numParams&0xFF].concat(u16b(d.address & 0xFFFF)); break;
+    case 15:  bytes = [d.index & 0xFF]; break;
+    case 13:  bytes = [d.slaveId&0xFF, d.fc&0xFF, d.dataType&0xFF, d.numParams&0xFF]
+                      .concat(u16b(d.address & 0xFFFF)); break;
+    case 8:
+    case 9:
+      var nreg = d.numReg & 0xFF;
+      bytes = [d.slaveId&0xFF, nreg].concat(u16b(d.address & 0xFFFF));
+      bytes = (nreg === 1) ? bytes.concat(u16b(d.value & 0xFFFF))
+                           : bytes.concat(u32b(d.value >>> 0));
+      break;
+    // ---- Config ----
+    case 16:  bytes = u32b(d.interval >>> 0); break;                          // TX interval
+    case 17:  bytes = [d.adr & 1]; break;                                     // ADR
+    case 18:  bytes = [d.msgtype & 1]; break;                                 // msg type
+    case 19:  bytes = [d.adr & 1, d.sf & 0xFF, d.msgtype & 1]; break;         // adr+sf+type
+    case 20:                                                                  // trigger
+      var mn = Math.round(d.min * 100), mx = Math.round(d.max * 100), ct = d.checktime & 0xFFFF;
+      bytes = [d.trig & 0xFF, d.param & 0xFF]
+              .concat(u16b(mn & 0xFFFF)).concat(u16b(mx & 0xFFFF))
+              .concat(u16b(ct)).concat([d.enable & 1]);
+      break;
+    case 21:
+      bytes = [d.param & 0xFF, d.count & 0xFF, d.enable & 1];
+      if (d.interval !== undefined) { bytes = bytes.concat(u16b(d.interval & 0xFFFF)); }
+      break;
+    default:
+      return { bytes: [], fPort: port, errors: ["unknown downlink port " + port] };
+  }
+  return { bytes: bytes, fPort: port };
+}
+
+// ChirpStack v3 compatibility - delete if you are on v4
+function Decode(fPort, bytes, variables) {
+  return decodeUplink({ bytes: bytes, fPort: fPort }).data;
 }
