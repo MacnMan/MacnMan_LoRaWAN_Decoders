@@ -1,6 +1,6 @@
 // ===================================================================
-// MacSync_LBS_TH_X1 — SHT40 Temperature & Humidity LoRaWAN node
-// ChirpStack v4 Codec (decodeUplink / encodeDownlink / decodeDownlink)
+// MacSync-LBS-TH-X1 — SHT40 Temperature & Humidity LoRaWAN node
+// TTN (The Things Network) Codec — same decodeUplink/encodeDownlink API as ChirpStack v4
 // UPLINK ports:   0x02 heartbeat, 0x03 multi-sample, 0x04 trigger, 0x05 boot,
 //                 0x10-0x15 config-ACK (echo of applied downlink)
 // DOWNLINK ports: 16 TXinterval, 17 ADR, 18 MsgType, 19 MSGINFO,

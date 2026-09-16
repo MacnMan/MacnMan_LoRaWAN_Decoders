@@ -1,5 +1,5 @@
 // ===================================================================
-// MacSync_LBS_TH_X1 — SHT40 Temperature & Humidity LoRaWAN node
+// MacSync-LBS-TH-X1 — SHT40 Temperature & Humidity LoRaWAN node
 // Milesight gateway built-in NS codec (ChirpStack v3 style: Decode / Encode)
 //
 // Milesight's embedded network server (UG63/UG65/UG67) is ChirpStack

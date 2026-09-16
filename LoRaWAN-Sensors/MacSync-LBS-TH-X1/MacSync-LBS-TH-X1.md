@@ -1,23 +1,23 @@
-# 📡 MacSync_LBS_TH_X1 LoRaWAN Codec Documentation
+# 📡 MacSync-LBS-TH-X1 LoRaWAN Codec Documentation
 
 ## 📘 Overview
-**MacSync_LBS_TH_X1** is a LoRaWAN-enabled **Temeperature & Humidity sensor** ( [SHT40](https://sensirion.com/products/catalog/SHT40) ) device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
+**MacSync-LBS-TH-X1** is a LoRaWAN-enabled **Temeperature & Humidity sensor** ( [SHT40](https://sensirion.com/products/catalog/SHT40) ) device. This repository provides JavaScript-based **decoder** (uplink) and **encoder** (downlink) scripts compatible with TTN, ChirpStack, and Milesight LNS.
 
 ---
 
 ## 📂 Repository Structure
 
-MacSync_LBS_TH_X1/
+MacSync-LBS-TH-X1/
 │
 ├── Decoder/
-│   ├── MacSync_LBS_TH_X1_TTN.js
-│   ├── MacSync_LBS_TH_X1_Chirpstack.js
-│   ├── MacSync_LBS_TH_X1_Milesight.js
+│   ├── MacSync-LBS-TH-X1_TTN.js
+│   ├── MacSync-LBS-TH-X1_Chirpstack.js
+│   ├── MacSync-LBS-TH-X1_Milesight.js
 │
 ├── Encoder/
-│   ├── MacSync_LBS_TH_X1_Encoder.js
+│   ├── MacSync-LBS-TH-X1_Encoder.js
 │
-└── MacSync_LBS_TH_X1.md
+└── MacSync-LBS-TH-X1.md
 
 ---
 
