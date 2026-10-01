@@ -1,61 +1,80 @@
-# 📡 MacnMan LoRaWAN Decoders
+# MacnMan LoRaWAN Decoders
 
-JavaScript payload **decoders** (uplink: bytes → JSON) and **encoders** (downlink: JSON → bytes) for **Macnman LoRaWAN® devices**, compatible with **TTN (The Things Network)**, **ChirpStack**, and **Milesight gateways** (built-in network server).
+Sample functions for Macnman LoRaWAN® device decoders (uplink: bytes → JSON) and encoders (downlink: JSON → bytes).
 
-📚 Product documentation & datasheets: [macnman.com/docs](https://macnman.com/docs/category/lorawan)
+Product documentation and datasheets: [macnman.com/docs](https://macnman.com/docs/category/lorawan)
 
----
+## Devices
 
-## 📂 Device Index
+|              DEVICE              |     MODEL     | FOLDER                                                                           |
+| :------------------------------: | :-----------: | -------------------------------------------------------------------------------- |
+| RS485 & Analog to LoRaWAN Sensor | MS_LBS_STD_X1 | [LoRaWAN-Sensors/MacSync_LBS_STD_X1_RS485](LoRaWAN-Sensors/MacSync_LBS_STD_X1_RS485) |
+|  Temperature & Humidity Sensor   | MS_LBS_TH_X1  | [LoRaWAN-Sensors/MacSync-LBS-TH-X1](LoRaWAN-Sensors/MacSync-LBS-TH-X1)               |
 
-| Device | Description | Codec |
-|--------|-------------|-------|
-| [MacSync_LBS_STD_X1_RS485](LoRaWAN-Sensors/MacSync_LBS_STD_X1_RS485) | RS485 (Modbus RTU) & Analog to LoRaWAN® sensor (MacSync LX1 family) | Decoder + Encoder |
-| [MacSync-LBS-TH-X1](LoRaWAN-Sensors/MacSync-LBS-TH-X1) | Temperature & humidity sensor (SHT40) | Decoder + Encoder |
+Open a device folder to see its payload format, downlink commands and examples.
 
----
-
-## 🚀 How to Use
-
-Each device folder contains:
+## Folder Layout
 
 ```
 <Device>/
+├── README.md         payload format, downlink commands, examples
+├── <Device>.png      product picture
 ├── Decoder/          complete codec (uplink decoder + downlink encoder), one file per platform
 │   ├── <Device>_TTN.js
 │   ├── <Device>_Chirpstack.js
 │   └── <Device>_Milesight.js
-├── Encoder/          standalone downlink encoder (reference copy)
-│   └── <Device>_Encoder.js
-└── <Device>.md       payload format + downlink command reference
+└── Encoder/          standalone downlink encoder
+    └── <Device>_Encoder.js
 ```
 
-Each file in `Decoder/` is **complete** — it contains both the uplink decoder and the downlink encoder, so one paste per platform is enough.
+## The following platforms are supported
 
-### TTN (The Things Stack)
-1. Console → *Applications → your app → Payload formatters → Uplink*.
+- [The Things Network](https://www.thethingsnetwork.org)
+- [ChirpStack v4](https://www.chirpstack.io)
+- [Milesight Gateway](https://www.milesight.com/iot/#lorawan-gateway) (built-in network server)
+
+## How to Use
+
+### The Things Stack
+
+1. *Applications → your app → Payload formatters → Uplink*.
 2. Select **Custom Javascript formatter** and paste the whole `_TTN.js` file.
 3. Paste the same file into the *Downlink* formatter (it contains `encodeDownlink`).
 
 ### ChirpStack v4
+
 1. *Device profile → Codec → JavaScript functions*.
 2. Paste the whole `_Chirpstack.js` file.
-3. Queue downlinks via MQTT on `application/{applicationId}/device/{devEui}/command/down` — see each device's `.md` for the JSON commands.
+3. Send a downlink over MQTT. Put the FPort both in `fPort` and in the object as `"port"`:
 
-### Milesight Gateway (UG63 / UG65 / UG67, built-in NS)
+Topic:
+
+```
+application/{applicationId}/device/{devEui}/command/down
+```
+
+Payload:
+
+```json
+{
+    "devEui": "0080e11505ca2663",
+    "confirmed": true,
+    "fPort": 16,
+    "object": { "port": 16, "interval": 600 }
+}
+```
+
+### Milesight Gateway (UG63 / UG65 / UG67)
+
 1. *Network Server → Profiles → device profile → Payload Codec → Custom*.
 2. Paste the whole `_Milesight.js` file into **both** the decoder box and the encoder box.
 
----
+## Codec Conventions
 
-## 🔄 Codec Conventions
+- **Uplink JSON** contains `type` (heartbeat / sampling / trigger / boot / config_ack / …), `deviceInfo` (battery, UTC + IST time, fPort) and `sensorInfo` (readings).
+- **Downlink JSON** carries the target FPort as `"port"` (the key `"fPort"` also works). Every applied command is echoed back by the device on the same FPort.
+- All multi-byte values are big-endian. Times are Unix seconds, UTC.
 
-- **Uplink JSON** contains `type` (heartbeat / sampling / trigger / boot / config_ack / …), `deviceInfo` (battery, UTC + IST timestamps, fPort) and `sensorInfo` (readings).
-- **Downlink JSON** carries the target port as `"port"` (the key `"fPort"` also works) — see each device's `.md` for the full command table. Every applied command is echoed back by the device on the same port.
-- Timestamps are Unix UTC seconds, big-endian on the wire.
-
----
-
-## 🏢 Macnman Technologies Pvt. Ltd.
+## Macnman Technologies Pvt. Ltd.
 
 [macnman.com](https://www.macnman.com) · [Product documentation](https://macnman.com/docs)
