@@ -10,8 +10,11 @@ Product documentation and datasheets: [macnman.com/docs](https://macnman.com/doc
 | :------------------------------: | :-----------: | -------------------------------------------------------------------------------- |
 | RS485 & Analog to LoRaWAN Sensor | MS_LBS_STD_X1 | [LoRaWAN-Sensors/MacSync_LBS_STD_X1_RS485](LoRaWAN-Sensors/MacSync_LBS_STD_X1_RS485) |
 |  Temperature & Humidity Sensor   | MS_LBS_TH_X1  | [LoRaWAN-Sensors/MacSync-LBS-TH-X1](LoRaWAN-Sensors/MacSync-LBS-TH-X1)               |
+|     Parking Occupancy Sensor     | ParkNode Gen-1 | [ParkNode Gen-1](ParkNode%20Gen-1)                                               |
 
 Open a device folder to see its payload format, downlink commands and examples.
+
+ParkNode Gen-1 has an uplink decoder only (no `Encoder/` folder), and its decoded values are returned inside a `Payload` object.
 
 ## Folder Layout
 
@@ -70,6 +73,8 @@ Payload:
 2. Paste the whole `_Milesight.js` file into **both** the decoder box and the encoder box.
 
 ## Codec Conventions
+
+These apply to the MacSync devices. ParkNode Gen-1 uses its own format, described in its folder.
 
 - **Uplink JSON** contains `type` (heartbeat / sampling / trigger / boot / config_ack / …), `deviceInfo` (battery, UTC + IST time, fPort) and `sensorInfo` (readings).
 - **Downlink JSON** carries the target FPort as `"port"` (the key `"fPort"` also works). Every applied command is echoed back by the device on the same FPort.
