@@ -50,7 +50,7 @@ All uplinks are sent on FPort 2. The first byte tells the frame type: `0x10` is 
 | `Systimestamp` | time of the frame in Unix seconds                            |
 |    `length`    | payload length in bytes                                      |
 |     `oem`      | `MACNMAN`                                                    |
-|    `device`    | `ParkOMate_LWAN_V1.0`                                        |
+|    `device`    | `Parknode Gen-1`                                        |
 |   `version`    | `1.0`                                                        |
 
 ## Example
@@ -65,7 +65,7 @@ All uplinks are sent on FPort 2. The first byte tells the frame type: `0x10` is 
         "msgType": "heartbeat",
         "length": 8,
         "oem": "MACNMAN",
-        "device": "ParkOMate_LWAN_V1.0",
+        "device": "Parknode Gen-1",
         "version": "1.0",
         "sensorInfo": {},
         "parkStatus": false,
@@ -81,7 +81,7 @@ All uplinks are sent on FPort 2. The first byte tells the frame type: `0x10` is 
         "msgType": "event",
         "length": 8,
         "oem": "MACNMAN",
-        "device": "ParkOMate_LWAN_V1.0",
+        "device": "Parknode Gen-1",
         "version": "1.0",
         "sensorInfo": {},
         "parkStatus": true,
@@ -99,7 +99,7 @@ All uplinks are sent on FPort 2. The first byte tells the frame type: `0x10` is 
         "Systimestamp": 1790782800,
         "length": 6,
         "oem": "MACNMAN",
-        "device": "ParkOMate_LWAN_V1.0",
+        "device": "Parknode Gen-1",
         "version": "1.0"
     }
 }

@@ -34,7 +34,7 @@ function Decoder(bytes, port) {
             "Systimestamp": tamper_timestamp,
             "length": bytes.length,
             "oem": "MACNMAN",
-            "device": "ParkOMate_LWAN_V1.0",
+            "device": "Parknode Gen-1",
             "version": "1.0"
         };
     }
@@ -47,7 +47,7 @@ function Decoder(bytes, port) {
         "msgType": bytes[dataIndex++] === 0x00 ? "event" : "heartbeat",
         "length": bytes.length,
         "oem": "MACNMAN",
-        "device": "ParkOMate_LWAN_V1.0",
+        "device": "Parknode Gen-1",
         "version": "1.0"
     }
 
