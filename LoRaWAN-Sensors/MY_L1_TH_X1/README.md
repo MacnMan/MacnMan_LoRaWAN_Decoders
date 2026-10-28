@@ -1,4 +1,4 @@
-# Temperature & Humidity Sensor - MY-L1-TH-X1 (was MS_LBS_TH_X1)
+# Temperature & Humidity Sensor - MY-L1-TH-X1
 
 ![MY-L1-TH-X1](MY_L1_TH_X1.png)
 

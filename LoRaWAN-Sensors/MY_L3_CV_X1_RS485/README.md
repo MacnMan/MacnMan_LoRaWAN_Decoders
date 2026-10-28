@@ -2,7 +2,7 @@
 
 ![MY-L3-CV-X1](MY_L3_CV_X1_RS485.png)
 
-> Model number MY-L3-CV-X1 since 28 Oct 2026 (was MS_LPS_STD_X1). The codec is unchanged and still reports `"model": "MS_LPS_STD_X1"`, so existing integrations keep working.
+> Model number MY-L3-CV-X1 since 28 Oct 2026. The codec is unchanged and still reports `"model": "MS_LPS_STD_X1"`, so existing integrations keep working.
 
 For more detailed information, please visit [Macnman Official Website](https://macnman.com/docs/category/lorawan)
 

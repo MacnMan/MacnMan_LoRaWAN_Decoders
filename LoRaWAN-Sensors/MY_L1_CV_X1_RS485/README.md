@@ -1,4 +1,4 @@
-# RS485 & Analog to LoRaWAN Converter - MY-L1-CV-X1 (was MS_LBS_STD_X1)
+# RS485 & Analog to LoRaWAN Converter - MY-L1-CV-X1
 
 ![MY-L1-CV-X1](MY_L1_CV_X1_RS485.png)
 

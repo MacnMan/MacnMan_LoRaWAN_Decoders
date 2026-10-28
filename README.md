@@ -8,10 +8,10 @@ Product documentation and datasheets: [macnman.com/docs](https://macnman.com/doc
 
 |              DEVICE              |     MODEL     | FOLDER                                                                           |
 | :------------------------------: | :-----------: | -------------------------------------------------------------------------------- |
-| RS485 & Analog to LoRaWAN Converter | MY-L1-CV-X1 (was MS_LBS_STD_X1) | [LoRaWAN-Sensors/MY_L1_CV_X1_RS485](LoRaWAN-Sensors/MY_L1_CV_X1_RS485) |
-| RS485 & Analog to LoRaWAN Converter (DC powered) | MY-L3-CV-X1 (was MS_LPS_STD_X1) | [LoRaWAN-Sensors/MY_L3_CV_X1_RS485](LoRaWAN-Sensors/MY_L3_CV_X1_RS485) |
-| Temperature & Humidity Sensor | MY-L1-TH-X1 (was MS_LBS_TH_X1) | [LoRaWAN-Sensors/MY_L1_TH_X1](LoRaWAN-Sensors/MY_L1_TH_X1) |
-| LoRaWAN Relay Controller | MS-L5-CT-X1 (was MS-LPC-ST-X1) | [LoRaWAN-Controllers/MS_L5_CT_X1](LoRaWAN-Controllers/MS_L5_CT_X1) |
+| RS485 & Analog to LoRaWAN Converter | MY-L1-CV-X1 | [LoRaWAN-Sensors/MY_L1_CV_X1_RS485](LoRaWAN-Sensors/MY_L1_CV_X1_RS485) |
+| RS485 & Analog to LoRaWAN Converter (DC powered) | MY-L3-CV-X1 | [LoRaWAN-Sensors/MY_L3_CV_X1_RS485](LoRaWAN-Sensors/MY_L3_CV_X1_RS485) |
+| Temperature & Humidity Sensor | MY-L1-TH-X1 | [LoRaWAN-Sensors/MY_L1_TH_X1](LoRaWAN-Sensors/MY_L1_TH_X1) |
+| LoRaWAN Relay Controller | MS-L5-CT-X1 | [LoRaWAN-Controllers/MS_L5_CT_X1](LoRaWAN-Controllers/MS_L5_CT_X1) |
 |     Parking Occupancy Sensor     | ParkNode Gen-1 | [ParkNode Gen-1](ParkNode%20Gen-1)                                               |
 
 Open a device folder to see its payload format, downlink commands and examples.
