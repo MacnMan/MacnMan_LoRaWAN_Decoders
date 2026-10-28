@@ -8,12 +8,15 @@ Product documentation and datasheets: [macnman.com/docs](https://macnman.com/doc
 
 |              DEVICE              |     MODEL     | FOLDER                                                                           |
 | :------------------------------: | :-----------: | -------------------------------------------------------------------------------- |
-| RS485 & Analog to LoRaWAN Sensor | MS_LBS_STD_X1 | [LoRaWAN-Sensors/MacSync_LBS_STD_X1_RS485](LoRaWAN-Sensors/MacSync_LBS_STD_X1_RS485) |
-| RS485 & Analog to LoRaWAN Sensor (DC powered) | MS_LPS_STD_X1 | [LoRaWAN-Sensors/MacSync_LPS_STD_X1_RS485](LoRaWAN-Sensors/MacSync_LPS_STD_X1_RS485) |
-|  Temperature & Humidity Sensor   | MS_LBS_TH_X1  | [LoRaWAN-Sensors/MacSync-LBS-TH-X1](LoRaWAN-Sensors/MacSync-LBS-TH-X1)               |
+| RS485 & Analog to LoRaWAN Converter | MY-L1-CV-X1 (was MS_LBS_STD_X1) | [LoRaWAN-Sensors/MY_L1_CV_X1_RS485](LoRaWAN-Sensors/MY_L1_CV_X1_RS485) |
+| RS485 & Analog to LoRaWAN Converter (DC powered) | MY-L3-CV-X1 (was MS_LPS_STD_X1) | [LoRaWAN-Sensors/MY_L3_CV_X1_RS485](LoRaWAN-Sensors/MY_L3_CV_X1_RS485) |
+| Temperature & Humidity Sensor | MY-L1-TH-X1 (was MS_LBS_TH_X1) | [LoRaWAN-Sensors/MY_L1_TH_X1](LoRaWAN-Sensors/MY_L1_TH_X1) |
+| LoRaWAN Relay Controller | MS-L5-CT-X1 (was MS-LPC-ST-X1) | [LoRaWAN-Controllers/MS_L5_CT_X1](LoRaWAN-Controllers/MS_L5_CT_X1) |
 |     Parking Occupancy Sensor     | ParkNode Gen-1 | [ParkNode Gen-1](ParkNode%20Gen-1)                                               |
 
 Open a device folder to see its payload format, downlink commands and examples.
+
+Model numbers follow the Macnman model number nomenclature (Family - Communication + Power + Storage - Function - Hardware revision; MS = MacSet, MY = MacSync). On 28 Oct 2026 the folders were renamed from the old numbers given in brackets; the codecs themselves are unchanged, so their decoded output still shows the old model names.
 
 ParkNode Gen-1 has an uplink decoder only (no `Encoder/` folder), and its decoded values are returned inside a `Payload` object.
 
@@ -77,7 +80,7 @@ Payload:
 
 These apply to the MacSync devices. ParkNode Gen-1 uses its own format, described in its folder.
 
-- **Uplink JSON** contains `type` (heartbeat / sampling / trigger / boot / config_ack / …), `deviceInfo` (battery, UTC + IST time, fPort) and `sensorInfo` (readings). DC-powered devices (MS_LPS_STD_X1) report `"power": "external"` instead of `battery`.
+- **Uplink JSON** contains `type` (heartbeat / sampling / trigger / boot / config_ack / …), `deviceInfo` (battery, UTC + IST time, fPort) and `sensorInfo` (readings). DC-powered devices (MY-L3-CV-X1) report `"power": "external"` instead of `battery`.
 - **Downlink JSON** carries the target FPort as `"port"` (the key `"fPort"` also works). Every applied command is echoed back by the device on the same FPort.
 - All multi-byte values are big-endian. Times are Unix seconds, UTC.
 

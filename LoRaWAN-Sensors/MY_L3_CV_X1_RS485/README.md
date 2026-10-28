@@ -1,24 +1,26 @@
-# RS485 & Analog to LoRaWAN Sensor (DC Powered) - MS_LPS_STD_X1
+# RS485 & Analog to LoRaWAN Converter (DC Powered) - MY-L3-CV-X1 (was MS_LPS_STD_X1)
 
-![MS_LPS_STD_X1](MacSync_LPS_STD_X1_RS485.png)
+![MY-L3-CV-X1](MY_L3_CV_X1_RS485.png)
+
+> Model number MY-L3-CV-X1 since 28 Oct 2026 (was MS_LPS_STD_X1). The codec is unchanged and still reports `"model": "MS_LPS_STD_X1"`, so existing integrations keep working.
 
 For more detailed information, please visit [Macnman Official Website](https://macnman.com/docs/category/lorawan)
 
-DC-powered version of [MS_LBS_STD_X1](../MacSync_LBS_STD_X1_RS485): Modbus RTU master (up to 20 fields) **or** 2 analog inputs (4-20 mA, 0-10 V, digital), LoRaWAN Class C (fixed). The payload is the same as MS_LBS_STD_X1 with two differences:
+DC-powered version of [MY-L1-CV-X1](../MY_L1_CV_X1_RS485): Modbus RTU master (up to 20 fields) **or** 2 analog inputs (4-20 mA, 0-10 V, digital), LoRaWAN Class C (fixed). The payload is the same as MY-L1-CV-X1 with two differences:
 
-- the byte that carries the battery level on MS_LBS_STD_X1 is always `0xFF` here (decoded as `"power": "external"`);
+- the byte that carries the battery level on MY-L1-CV-X1 is always `0xFF` here (decoded as `"power": "external"`);
 - trigger values (value, min, max) are 4 bytes each (int32), so values above 327.67 are sent correctly.
 
 ## Codec
 
 |      PLATFORM      | FILE                                                                                   | FUNCTIONS                                     |
 | :----------------: | -------------------------------------------------------------------------------------- | --------------------------------------------- |
-| The Things Network | [MacSync_LPS_STD_X1_RS485_TTN.js](Decoder/MacSync_LPS_STD_X1_RS485_TTN.js)               | decodeUplink / encodeDownlink                 |
-|   ChirpStack v4    | [MacSync_LPS_STD_X1_RS485_Chirpstack.js](Decoder/MacSync_LPS_STD_X1_RS485_Chirpstack.js) | decodeUplink / encodeDownlink (v3: Decode / Encode) |
-| Milesight Gateway  | [MacSync_LPS_STD_X1_RS485_Milesight.js](Decoder/MacSync_LPS_STD_X1_RS485_Milesight.js)   | Decode / Encode                               |
-|   Downlink only    | [MacSync_LPS_STD_X1_RS485_Encoder.js](Encoder/MacSync_LPS_STD_X1_RS485_Encoder.js)       | encodeDownlink                                |
+| The Things Network | [MY_L3_CV_X1_RS485_TTN.js](Decoder/MY_L3_CV_X1_RS485_TTN.js)               | decodeUplink / encodeDownlink                 |
+|   ChirpStack v4    | [MY_L3_CV_X1_RS485_Chirpstack.js](Decoder/MY_L3_CV_X1_RS485_Chirpstack.js) | decodeUplink / encodeDownlink (v3: Decode / Encode) |
+| Milesight Gateway  | [MY_L3_CV_X1_RS485_Milesight.js](Decoder/MY_L3_CV_X1_RS485_Milesight.js)   | Decode / Encode                               |
+|   Downlink only    | [MY_L3_CV_X1_RS485_Encoder.js](Encoder/MY_L3_CV_X1_RS485_Encoder.js)       | encodeDownlink                                |
 
-Each platform file holds both the uplink decoder and the downlink encoder. The decoders also read the 15-byte trigger frames of MS_LBS_STD_X1 (the two are told apart by their length).
+Each platform file holds both the uplink decoder and the downlink encoder. The decoders also read the 15-byte trigger frames of MY-L1-CV-X1 (the two are told apart by their length).
 
 The device runs in **Class C**: set the network server device profile to Class C too, or downlinks wait for the next uplink.
 
@@ -86,7 +88,7 @@ Put the FPort in the JSON as `"port"` (or `"fPort"`) and send the downlink on th
 |        ADR         | 0x11 (17) |   1    | adr(1B)<br/>adr, values: (0: off, 1: on)<br/>the device restarts to apply                                                                                                                                                                                    |
 |    Message Type    | 0x12 (18) |   1    | msgtype(1B)<br/>msgtype, values: (0: unconfirmed, 1: confirmed)                                                                                                                                                                                              |
 |    Message Info    | 0x13 (19) |   3    | adr(1B) + sf(1B) + msgtype(1B)<br/>sf, range: 7 - 12, used when ADR is off (DR = 12 - SF)<br/>the device restarts to apply                                                                                                                                    |
-|      Trigger       | 0x14 (20) |   13   | trig(1B) + param(1B) + min(4B) + max(4B) + checktime(2B) + enable(1B)<br/>trig, values: (1, 2)<br/>param, values: (0: field 1 / channel A, 1: field 2 / channel B)<br/>min, max: int32, value × 100<br/>checktime, unit: s, range: 5 - 65535<br/>enable, values: (0: off, 1: on)<br/>the 9-byte form of MS_LBS_STD_X1 (min, max 2 bytes) is also accepted |
+|      Trigger       | 0x14 (20) |   13   | trig(1B) + param(1B) + min(4B) + max(4B) + checktime(2B) + enable(1B)<br/>trig, values: (1, 2)<br/>param, values: (0: field 1 / channel A, 1: field 2 / channel B)<br/>min, max: int32, value × 100<br/>checktime, unit: s, range: 5 - 65535<br/>enable, values: (0: off, 1: on)<br/>the 9-byte form of MY-L1-CV-X1 (min, max 2 bytes) is also accepted |
 |      Sampling      | 0x15 (21) | 3 / 5  | param(1B) + count(1B) + enable(1B) + interval(2B, optional)<br/>param, values: (0: field 1 / channel A, 1: field 2 / channel B, 2: both)<br/>count, range: 2 - 12<br/>enable, values: (0: off, 1: on)<br/>interval, unit: s, range: 30 - 3600                    |
 
 There is no class downlink: the device always runs in Class C.

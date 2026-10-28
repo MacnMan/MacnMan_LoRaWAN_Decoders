@@ -1,6 +1,6 @@
-# Temperature & Humidity Sensor - MS_LBS_TH_X1
+# Temperature & Humidity Sensor - MY-L1-TH-X1 (was MS_LBS_TH_X1)
 
-![MS_LBS_TH_X1](MacSync-LBS-TH-X1.png)
+![MY-L1-TH-X1](MY_L1_TH_X1.png)
 
 For more detailed information, please visit [Macnman Official Website](https://macnman.com/docs/category/lorawan)
 
@@ -8,10 +8,10 @@ For more detailed information, please visit [Macnman Official Website](https://m
 
 |      PLATFORM      | FILE                                                                   | FUNCTIONS                     |
 | :----------------: | ---------------------------------------------------------------------- | ----------------------------- |
-| The Things Network | [MacSync-LBS-TH-X1_TTN.js](Decoder/MacSync-LBS-TH-X1_TTN.js)           | decodeUplink / encodeDownlink |
-|   ChirpStack v4    | [MacSync-LBS-TH-X1_Chirpstack.js](Decoder/MacSync-LBS-TH-X1_Chirpstack.js) | decodeUplink / encodeDownlink |
-| Milesight Gateway  | [MacSync-LBS-TH-X1_Milesight.js](Decoder/MacSync-LBS-TH-X1_Milesight.js)   | Decode / Encode               |
-|   Downlink only    | [MacSync-LBS-TH-X1_Encoder.js](Encoder/MacSync-LBS-TH-X1_Encoder.js)   | encodeDownlink                |
+| The Things Network | [MY_L1_TH_X1_TTN.js](Decoder/MY_L1_TH_X1_TTN.js)           | decodeUplink / encodeDownlink |
+|   ChirpStack v4    | [MY_L1_TH_X1_Chirpstack.js](Decoder/MY_L1_TH_X1_Chirpstack.js) | decodeUplink / encodeDownlink |
+| Milesight Gateway  | [MY_L1_TH_X1_Milesight.js](Decoder/MY_L1_TH_X1_Milesight.js)   | Decode / Encode               |
+|   Downlink only    | [MY_L1_TH_X1_Encoder.js](Encoder/MY_L1_TH_X1_Encoder.js)   | encodeDownlink                |
 
 Each platform file holds both the uplink decoder and the downlink encoder.
 

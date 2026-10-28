@@ -1,6 +1,6 @@
-# RS485 & Analog to LoRaWAN Sensor - MS_LBS_STD_X1
+# RS485 & Analog to LoRaWAN Converter - MY-L1-CV-X1 (was MS_LBS_STD_X1)
 
-![MS_LBS_STD_X1](MacSync_LBS_STD_X1_RS485.png)
+![MY-L1-CV-X1](MY_L1_CV_X1_RS485.png)
 
 For more detailed information, please visit [Macnman Official Website](https://macnman.com/docs/product/lorawan/dataloggers/rs485-analog-to-lorawan-converter-macsync-lx1)
 
@@ -8,10 +8,10 @@ For more detailed information, please visit [Macnman Official Website](https://m
 
 |      PLATFORM      | FILE                                                                                   | FUNCTIONS                                     |
 | :----------------: | -------------------------------------------------------------------------------------- | --------------------------------------------- |
-| The Things Network | [MacSync_LBS_STD_X1_RS485_TTN.js](Decoder/MacSync_LBS_STD_X1_RS485_TTN.js)               | decodeUplink / encodeDownlink                 |
-|   ChirpStack v4    | [MacSync_LBS_STD_X1_RS485_Chirpstack.js](Decoder/MacSync_LBS_STD_X1_RS485_Chirpstack.js) | decodeUplink / encodeDownlink (v3: Decode)    |
-| Milesight Gateway  | [MacSync_LBS_STD_X1_RS485_Milesight.js](Decoder/MacSync_LBS_STD_X1_RS485_Milesight.js)   | Decode / Encode                               |
-|   Downlink only    | [MacSync_LBS_STD_X1_RS485_Encoder.js](Encoder/MacSync_LBS_STD_X1_RS485_Encoder.js)       | encodeDownlink                                |
+| The Things Network | [MY_L1_CV_X1_RS485_TTN.js](Decoder/MY_L1_CV_X1_RS485_TTN.js)               | decodeUplink / encodeDownlink                 |
+|   ChirpStack v4    | [MY_L1_CV_X1_RS485_Chirpstack.js](Decoder/MY_L1_CV_X1_RS485_Chirpstack.js) | decodeUplink / encodeDownlink (v3: Decode)    |
+| Milesight Gateway  | [MY_L1_CV_X1_RS485_Milesight.js](Decoder/MY_L1_CV_X1_RS485_Milesight.js)   | Decode / Encode                               |
+|   Downlink only    | [MY_L1_CV_X1_RS485_Encoder.js](Encoder/MY_L1_CV_X1_RS485_Encoder.js)       | encodeDownlink                                |
 
 Each platform file holds both the uplink decoder and the downlink encoder.
 
