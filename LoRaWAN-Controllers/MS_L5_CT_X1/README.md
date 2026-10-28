@@ -1,4 +1,4 @@
-# LoRaWAN Relay Controller - MS-L5-CT-X1 (was MS-LPC-ST-X1)
+# LoRaWAN Relay Controller - MS-L5-CT-X1
 
 ![MS-L5-CT-X1](MS_L5_CT_X1.png)
 
