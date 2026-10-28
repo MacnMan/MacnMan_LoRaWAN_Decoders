@@ -2,13 +2,19 @@
  * Macnman LoRaWAN payload codec V5.1 - controllers and nodes
  * Macnman Technologies Pvt. Ltd.
  *
+ * ChirpStack v4 file of the MacSet MS-L5-CT-X1 relay controller (was
+ * MS-LPC-ST-X1). The same codec for The Things Stack is
+ * MS_L5_CT_X1_TTN.js, for the Milesight gateway MS_L5_CT_X1_Milesight.js.
+ *
  * V5.0  29-Sep-2025  Prabhudayal Patel
  * V5.1  13-Oct-2026  Controller frames checked against the MacSet
- *                    LPC-ST-X1 firmware. Change list at the end of the file.
+ *                    MS-L5-CT-X1 (was MS-LPC-ST-X1) firmware. Change list
+ *                    at the end of the file.
  *
  * Entry points
  *   decodeUplink(input)    TTN v3 / ChirpStack v4 style network servers
- *   Decode(fPort, bytes)   Milesight gateway
+ *   Decode(fPort, bytes)   ChirpStack v3 style; for the Milesight gateway
+ *                          use MS_L5_CT_X1_Milesight.js
  *   encodeDownlink(input)  TTN v3 / ChirpStack v4 style network servers.
  *                          Put the port in the JSON as "fPort" and use the
  *                          same FPort for the downlink itself.
@@ -26,12 +32,12 @@
  * Controller relay event (firmware from 15 Oct 2026): FPort 4, its own
  * layout, see decodeRelayEvent(); time stamp UTC.
  * Controller sampling (firmware from 22 Oct 2026): readings on FPort 3 and
- * the settings echo on FPort 21, in the layout of the MacSync LBS-STD-X1
- * node, see decodeSamplingBatch(); time stamp UTC.
+ * the settings echo on FPort 21, in the layout of the MacSync MY-L1-CV-X1
+ * (was MS-LBS-STD-X1) node, see decodeSamplingBatch(); time stamp UTC.
  * Controller ADR / message type (firmware from 23 Oct 2026): the answer to
  * a port 17 / 18 downlink comes on that same FPort, as on the MacSync
- * LBS-TH-X1 (SHT40) node, see decodeSettingEcho(); the same for port 19
- * (ADR + SF + message type, firmware from 27 Oct 2026).
+ * MY-L1-TH-X1 (SHT40, was MS-LBS-TH-X1) node, see decodeSettingEcho(); the
+ * same for port 19 (ADR + SF + message type, firmware from 27 Oct 2026).
  *
  * The output keys are the same as in V5.0, spelling included
  * (protocall, responce, SUCCSESS), so existing dashboards keep working.
@@ -217,7 +223,7 @@ function Decoder(bytes, port) {
 
 // =====================================================================
 // SAMPLING (FPort 3) and its settings echo (FPort 21): controller firmware
-// from 22 Oct 2026, in the layout of the MacSync LBS-STD-X1 node
+// from 22 Oct 2026, in the layout of the MacSync MY-L1-CV-X1 node
 //   [0] readings n   [1] source 0 RS485, 1 analog
 //   [2] input 1 or 2, or 0 for both   [3] its type ([4] type of input 2)
 //   n floats of the input (both: n of input 1, then n of input 2),
@@ -225,8 +231,8 @@ function Decoder(bytes, port) {
 //   UTC time stamp. Size 9 + 4 n, or 10 + 8 n for both.
 // type: the RS485 field's data type, or the analog channel's mode.
 // "Both" (input 0 in [2]) is sent only by controller firmware of 22 - 27 Oct
-// 2026 and by the LBS node; it is still decoded. Controller firmware from
-// 27 Oct 2026 (later build) samples one input only.
+// 2026 and by the MY-L1-CV-X1 node; it is still decoded. Controller
+// firmware from 27 Oct 2026 (later build) samples one input only.
 // =====================================================================
 
 var SAMPLING_DATA_TYPES = ["int16", "uint16", "int32", "int32 CDAB",
@@ -1281,7 +1287,7 @@ function encodeDownlink(input) {
                 requireInt(data.msgtype, "msgtype", 0, 1));
             break;
 
-        case 21: // sampling settings, the bytes of the LBS-STD-X1 node
+        case 21: // sampling settings, the bytes of the MY-L1-CV-X1 node
             bytes.push(
                 // 0 / 1 only: "both" (2) was removed from the controller
                 // on 27 Oct 2026, its frame is too big for SF10 - SF12
@@ -1356,14 +1362,14 @@ function encodeDownlink(input) {
  *     Older frames decode as before. Encoder port 5 / 7: relay1 and relay2
  *     (0 / 1) are both needed and go out as that one byte, which sets both
  *     relays.
- * 18. Sampling (22 Oct 2026), as on the MacSync LBS-STD-X1 node: FPort 3
+ * 18. Sampling (22 Oct 2026), as on the MacSync MY-L1-CV-X1 node: FPort 3
  *     readings decode as sampling (source, sampleCount, inputs with field
  *     or channel, type and samples), the FPort 21 echo as samplingConfig.
- *     Only frames of exactly the LBS layout are taken on FPort 3. Encoder
+ *     Only frames of exactly that node's layout are taken on FPort 3. Encoder
  *     port 21: param, count, enable and the optional interval.
  * 19. Port 6 (23 Oct 2026): txTime from 10 s (was 30). Firmware before
  *     23 Oct 2026 answers a value below 30 with an ERROR response.
- * 20. ADR and message type (23 Oct 2026), as on the MacSync LBS-TH-X1
+ * 20. ADR and message type (23 Oct 2026), as on the MacSync MY-L1-TH-X1
  *     (SHT40) node: encoder port 17 (adr 0 / 1) and port 18 (msgtype
  *     0 / 1), one byte each. The 2-byte echo on FPort 17 / 18 decodes as
  *     lorawanConfig (adr ON / OFF, msgtype CONFIRMED / UNCONFIRMED). Older
@@ -1379,5 +1385,12 @@ function encodeDownlink(input) {
  * 23. Sampling "both" removed (27 Oct 2026, later build): the controller
  *     samples one input only (frame 9 + 4 n bytes, at most 57). Encoder port
  *     21: param 0 or 1; 2 raises an error. The decoder still reads "both"
- *     frames and echoes from older firmware and the LBS node.
+ *     frames and echoes from older firmware and the MY-L1-CV-X1 node.
+ * 24. New model numbers and platform files (28 Oct 2026): the comments use
+ *     MS-L5-CT-X1 (was MS-LPC-ST-X1), MY-L1-CV-X1 (was MS-LBS-STD-X1) and
+ *     MY-L1-TH-X1 (was MS-LBS-TH-X1). MS_L5_CT_X1_TTN.js and
+ *     MS_L5_CT_X1_Milesight.js hold the same codec for The Things Stack and
+ *     the Milesight gateway; they read floats and 32-bit integers without
+ *     DataView, so they also run on ES5 engines, with the same results.
+ *     The Milesight file adds Encode(fPort, obj). No change to the output.
  */
