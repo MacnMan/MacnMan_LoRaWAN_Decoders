@@ -38,6 +38,9 @@
  * a port 17 / 18 downlink comes on that same FPort, as on the MacSync
  * MY-L1-TH-X1 (SHT40, was MS-LBS-TH-X1) node, see decodeSettingEcho(); the
  * same for port 19 (ADR + SF + message type, firmware from 27 Oct 2026).
+ * Controller digital inputs (analog mode 3, firmware from 28 Oct 2026): the
+ * periodic frame carries 1 or 0, decoded as channel_<x>_level 1 / 0, and
+ * the sampling readings are 1 or 0 (mode "digital").
  *
  * The output keys are the same as in V5.0, spelling included
  * (protocall, responce, SUCCSESS), so existing dashboards keep working.
@@ -229,7 +232,9 @@ function Decoder(bytes, port) {
 //   n floats of the input (both: n of input 1, then n of input 2),
 //   4 bytes each, big endian; then 0xFF (the node's battery byte) and the
 //   UTC time stamp. Size 9 + 4 n, or 10 + 8 n for both.
-// type: the RS485 field's data type, or the analog channel's mode.
+// type: the RS485 field's data type, or the analog channel's mode. Mode 3
+// (digital) readings are 1 or 0 from controller firmware of 28 Oct 2026 on;
+// older firmware sent the voltage, which is shown as it is.
 // "Both" (input 0 in [2]) is sent only by controller firmware of 22 - 27 Oct
 // 2026 and by the MY-L1-CV-X1 node; it is still decoded. Controller
 // firmware from 27 Oct 2026 (later build) samples one input only.
@@ -237,8 +242,7 @@ function Decoder(bytes, port) {
 
 var SAMPLING_DATA_TYPES = ["int16", "uint16", "int32", "int32 CDAB",
     "float", "float CDAB"];
-var SAMPLING_ANALOG_MODES = ["off", "current mA", "voltage V",
-    "voltage V, clipped at 0"];
+var SAMPLING_ANALOG_MODES = ["off", "current mA", "voltage V", "digital"];
 
 // true only for a frame of exactly this layout: other devices may send on
 // FPort 3 as well.
@@ -600,10 +604,23 @@ function getAnalogData(bytes) {
 //   mode 0 disabled
 //   mode 1 current, sent in uA, reported in mA
 //   mode 2 voltage, sent in mV, reported in V
-//   mode 3 digital level, sent as a voltage in mV, HIGH above 1.8 V
-//          (the same threshold as AT+ANGCHECK in the controller)
+//   mode 3 digital level, see digitalLevel(): controller 1 / 0, node
+//          "HIGH" / "LOW" (V5.0 output)
 // Controller: the channels are followed by the controller block and the
 // time stamp. Node: by a battery byte and the time stamp (V5.0 layout).
+
+// Value of a mode 3 channel (digital input). Controller firmware from
+// 28 Oct 2026 sends 1 or 0; older controller firmware and the nodes send
+// the voltage in mV, high above 1.8 V (the threshold of AT+ANGCHECK). A
+// controller gets 1 / 0 either way (a voltage frame of exactly 1 mV reads
+// as 1); a node keeps the V5.0 "HIGH" / "LOW".
+function digitalLevel(value, controller) {
+    if (controller) {
+        return (value <= 1) ? value : ((value / 1000) > 1.8 ? 1 : 0);
+    }
+    return (value / 1000) > 1.8 ? "HIGH" : "LOW";
+}
+
 function decodeAnalogPayload(bytes) {
     var analog_data = {};
     analog_data.messageType = "Payload";
@@ -628,7 +645,7 @@ function decodeAnalogPayload(bytes) {
                 break;
             case 3:
                 analog_data.analogData[name + "_level"] =
-                    (readUint16(bytes, i + 1) / 1000) > 1.8 ? "HIGH" : "LOW";
+                    digitalLevel(readUint16(bytes, i + 1), bytes[1] === 3);
                 i += 2;
                 break;
             default:
@@ -1393,4 +1410,11 @@ function encodeDownlink(input) {
  *     the Milesight gateway; they read floats and 32-bit integers without
  *     DataView, so they also run on ES5 engines, with the same results.
  *     The Milesight file adds Encode(fPort, obj). No change to the output.
+ * 25. Digital inputs as 1 / 0 (28 Oct 2026): controller firmware sends 1 or
+ *     0 for an analog channel in mode 3, in the periodic frame (where it sent
+ *     the voltage in mV) and in the sampling readings (where it sent the
+ *     voltage). A controller's channel_<x>_level is now 1 / 0 (was "HIGH" /
+ *     "LOW"), also for frames of older firmware (above 1.8 V = 1); nodes
+ *     keep "HIGH" / "LOW". Sampling mode 3 is named "digital" (was
+ *     "voltage V, clipped at 0"); the readings are shown as sent.
  */
