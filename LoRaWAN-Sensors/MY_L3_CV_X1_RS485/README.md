@@ -1,4 +1,4 @@
-# RS485 & Analog to LoRaWAN Converter (DC Powered) - MY-L3-CV-X1 (was MS_LPS_STD_X1)
+# RS485 & Analog to LoRaWAN Converter (DC Powered) - MY-L3-CV-X1
 
 ![MY-L3-CV-X1](MY_L3_CV_X1_RS485.png)
 
