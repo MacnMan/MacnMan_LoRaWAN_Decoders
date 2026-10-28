@@ -25,7 +25,7 @@ The device runs in **Class C**: set the network server device profile to Class C
 
 All multi-byte values are big-endian (MSB first). The device information and the periodic data carry local time (UTC + 5:30), every other uplink carries UTC.
 
-An analog channel in digital mode reports `1` (above 1.8 V) or `0`: in the periodic data as `channel_a_level` / `channel_b_level`, and as the sampling readings (mode `"digital"`). Firmware before 28 Oct 2026 sent the voltage there; the codec still reads its periodic data as `1` / `0`.
+An analog channel in digital mode reports `1` (above 1.8 V) or `0`: in the periodic data as `channel_a_level` / `channel_b_level`, and as the sampling readings (mode `"digital"`). A trigger schedule on that channel compares the same `1` / `0`, and the relay event gives it as the trigger value: `"condition": 0, "threshold": 0` switches the relay ON while the input is `1`, `"condition": 1, "threshold": 1` while it is `0`. Firmware before 28 Oct 2026 sent the voltage there (and a trigger on a digital channel never switched); the codec still reads its periodic data as `1` / `0`.
 
 | FPORT  | DIRECTION | MESSAGE                                                                                     |
 | :----: | :-------: | ------------------------------------------------------------------------------------------- |
