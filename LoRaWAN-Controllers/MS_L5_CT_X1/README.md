@@ -13,10 +13,11 @@ MacSet LoRaWAN relay controller: 2 relay outputs (NO / C / NC), RS485 Modbus RTU
 | The Things Network | [MS_L5_CT_X1_TTN.js](Decoder/MS_L5_CT_X1_TTN.js)               | decodeUplink / encodeDownlink |
 |   ChirpStack v4    | [MS_L5_CT_X1_Chirpstack.js](Decoder/MS_L5_CT_X1_Chirpstack.js) | decodeUplink / encodeDownlink |
 | Milesight Gateway  | [MS_L5_CT_X1_Milesight.js](Decoder/MS_L5_CT_X1_Milesight.js)   | Decode / Encode               |
+|   Downlink only    | [MS_L5_CT_X1_Encoder.js](Encoder/MS_L5_CT_X1_Encoder.js)       | encodeDownlink                |
 
 This is the Macnman LoRaWAN codec V5.1 for controllers and nodes. The output keys are the same as in V5.0, spelling included (`protocall`, `responce`, `SUCCSESS`), so existing dashboards keep working.
 
-Each platform file holds the uplink decoder and the downlink encoder, and all three give the same output. The TTN and Milesight files read floats without `DataView`, so they also run on the gateway's older JavaScript engine. On the Milesight gateway paste the whole file into **both** the decoder box and the encoder box; the JSON for `Encode` may leave out `"port"`, the FPort of the downlink is used.
+Each platform file holds the uplink decoder and the downlink encoder, and all three give the same output. The TTN and Milesight files read floats without `DataView`, so they also run on the gateway's older JavaScript engine. On the Milesight gateway paste the whole file into **both** the decoder box and the encoder box; the JSON for `Encode` may leave out `"port"`, the FPort of the downlink is used. The `Encoder` file is the same downlink encoder on its own, with an example for every FPort (JSON and the bytes it sends).
 
 The device runs in **Class C**: set the network server device profile to Class C too, or downlinks wait for the next uplink.
 
