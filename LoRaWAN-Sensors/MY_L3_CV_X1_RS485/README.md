@@ -2,8 +2,6 @@
 
 ![MY-L3-CV-X1](MY_L3_CV_X1_RS485.png)
 
-> Model number MY-L3-CV-X1 since 28 Oct 2026. The codec is unchanged and still reports `"model": "MS_LPS_STD_X1"`, so existing integrations keep working.
-
 For more detailed information, please visit [Macnman Official Website](https://macnman.com/docs/category/lorawan)
 
 DC-powered version of [MY-L1-CV-X1](../MY_L1_CV_X1_RS485): Modbus RTU master (up to 20 fields) **or** 2 analog inputs (4-20 mA, 0-10 V, digital), LoRaWAN Class C (fixed). The payload is the same as MY-L1-CV-X1 with two differences:
@@ -114,7 +112,7 @@ There is no class downlink: the device always runs in Class C.
     "type": "heartbeat",
     "deviceInfo": {
         "fPort": 2,
-        "model": "MS_LPS_STD_X1",
+        "model": "MY_L3_CV_X1",
         "source": "rs485",
         "power": "external",
         "unixUTC": 1790762400,
@@ -171,7 +169,7 @@ There is no class downlink: the device always runs in Class C.
     "type": "heartbeat",
     "deviceInfo": {
         "fPort": 2,
-        "model": "MS_LPS_STD_X1",
+        "model": "MY_L3_CV_X1",
         "source": "analog",
         "power": "external",
         "unixUTC": 1790762400,
@@ -202,7 +200,7 @@ There is no class downlink: the device always runs in Class C.
     "type": "sampling",
     "deviceInfo": {
         "fPort": 3,
-        "model": "MS_LPS_STD_X1",
+        "model": "MY_L3_CV_X1",
         "source": "rs485",
         "power": "external",
         "unixUTC": 1790762400,
@@ -223,7 +221,7 @@ There is no class downlink: the device always runs in Class C.
     "type": "trigger",
     "deviceInfo": {
         "fPort": 4,
-        "model": "MS_LPS_STD_X1",
+        "model": "MY_L3_CV_X1",
         "source": "rs485",
         "power": "external",
         "unixUTC": 1790762400,
@@ -246,7 +244,7 @@ There is no class downlink: the device always runs in Class C.
     "type": "trigger",
     "deviceInfo": {
         "fPort": 4,
-        "model": "MS_LPS_STD_X1",
+        "model": "MY_L3_CV_X1",
         "source": "analog",
         "power": "external",
         "unixUTC": 1790762400,
@@ -269,7 +267,7 @@ There is no class downlink: the device always runs in Class C.
     "type": "boot",
     "deviceInfo": {
         "fPort": 5,
-        "model": "MS_LPS_STD_X1",
+        "model": "MY_L3_CV_X1",
         "unixUTC": 0,
         "timeUTC": "not synced",
         "timeIST": "not synced",
@@ -327,7 +325,7 @@ There is no class downlink: the device always runs in Class C.
     "type": "modbus_ack",
     "deviceInfo": {
         "fPort": 10,
-        "model": "MS_LPS_STD_X1",
+        "model": "MY_L3_CV_X1",
         "unixUTC": 1790762400,
         "timeUTC": "2026-09-30T10:00:00Z",
         "timeIST": "2026-09-30T15:30:00+05:30",
@@ -352,7 +350,7 @@ There is no class downlink: the device always runs in Class C.
     "type": "modbus_ack",
     "deviceInfo": {
         "fPort": 13,
-        "model": "MS_LPS_STD_X1",
+        "model": "MY_L3_CV_X1",
         "unixUTC": 1790762400,
         "timeUTC": "2026-09-30T10:00:00Z",
         "timeIST": "2026-09-30T15:30:00+05:30",
@@ -372,7 +370,7 @@ There is no class downlink: the device always runs in Class C.
     "type": "modbus_ack",
     "deviceInfo": {
         "fPort": 13,
-        "model": "MS_LPS_STD_X1",
+        "model": "MY_L3_CV_X1",
         "unixUTC": 1790762400,
         "timeUTC": "2026-09-30T10:00:00Z",
         "timeIST": "2026-09-30T15:30:00+05:30",
@@ -392,7 +390,7 @@ There is no class downlink: the device always runs in Class C.
     "type": "modbus_ack",
     "deviceInfo": {
         "fPort": 12,
-        "model": "MS_LPS_STD_X1",
+        "model": "MY_L3_CV_X1",
         "unixUTC": 1790762400,
         "timeUTC": "2026-09-30T10:00:00Z",
         "timeIST": "2026-09-30T15:30:00+05:30",

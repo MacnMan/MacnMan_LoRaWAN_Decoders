@@ -25,7 +25,7 @@
 //   warnings   : inside data (ChirpStack v4 drops top-level warnings)
 // ===================================================================
 
-var MODEL = "MS_LPS_STD_X1";
+var MODEL = "MY_L3_CV_X1";
 var IST_OFFSET = 19800;            // +5:30 in seconds
 var MIN_VALID_UTC = 1577836800;    // 2020-01-01. Below this the node clock is not synced yet
 var EXT_POWER = 0xFF;              // LPS sends 0xFF where the battery node sends battery %
