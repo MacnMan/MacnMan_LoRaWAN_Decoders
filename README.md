@@ -11,12 +11,14 @@ Product documentation and datasheets: [macnman.com/docs](https://macnman.com/doc
 | RS485 & Analog to LoRaWAN Converter | MY-L1-CV-X1 | [LoRaWAN-Sensors/MY_L1_CV_X1_RS485](LoRaWAN-Sensors/MY_L1_CV_X1_RS485) |
 | RS485 & Analog to LoRaWAN Converter (DC powered) | MY-L3-CV-X1 | [LoRaWAN-Sensors/MY_L3_CV_X1_RS485](LoRaWAN-Sensors/MY_L3_CV_X1_RS485) |
 | Temperature & Humidity Sensor | MY-L1-TH-X1 | [LoRaWAN-Sensors/MY_L1_TH_X1](LoRaWAN-Sensors/MY_L1_TH_X1) |
+| CO2, Temperature & Humidity Sensor | MY-L1-CO2-X1 | [LoRaWAN-Sensors/MY-L1-CO2-X1](LoRaWAN-Sensors/MY-L1-CO2-X1) |
+| Soil pH Sensor | MY-L1-SPH-X1 | [LoRaWAN-Sensors/MY-L1-SPH-X1](LoRaWAN-Sensors/MY-L1-SPH-X1) |
 | LoRaWAN Relay Controller | MS-L5-CT-X1 | [LoRaWAN-Controllers/MS_L5_CT_X1](LoRaWAN-Controllers/MS_L5_CT_X1) |
 |     Parking Occupancy Sensor     | ParkNode Gen-1 | [ParkNode Gen-1](ParkNode%20Gen-1)                                               |
 
 Open a device folder to see its payload format, downlink commands and examples.
 
-Model numbers follow the Macnman model number nomenclature (Family - Communication + Power + Storage - Function - Hardware revision; MS = MacSet, MY = MacSync). On 28 Oct 2026 the folders were renamed from the old numbers given in brackets; the codecs themselves are unchanged, so their decoded output still shows the old model names.
+Model numbers follow the Macnman model number nomenclature (Family - Communication + Power + Storage - Function - Hardware revision; MS = MacSet, MY = MacSync).
 
 ParkNode Gen-1 has an uplink decoder only (no `Encoder/` folder), and its decoded values are returned inside a `Payload` object.
 
@@ -34,6 +36,22 @@ ParkNode Gen-1 has an uplink decoder only (no `Encoder/` folder), and its decode
     └── <Device>_Encoder.js
 ```
 
+MY-L1-CO2-X1 and MY-L1-SPH-X1 use this layout:
+
+```
+<Device>/
+├── README.md         payload format, downlink commands, examples
+├── <Device>.png      product picture
+├── Decoders/         uplink decoder only, one file per platform
+│   ├── <Device>_decoder_ttn.js
+│   ├── <Device>_decoder_chirpstack.js
+│   └── <Device>_decoder_milesight.js
+└── Encoders/         complete codec (uplink decoder + downlink encoder), one file per platform
+    ├── <Device>_encoder_ttn.js
+    ├── <Device>_encoder_chirpstack.js
+    └── <Device>_encoder_milesight.js
+```
+
 ## The following platforms are supported
 
 - [The Things Network](https://www.thethingsnetwork.org)
@@ -41,6 +59,8 @@ ParkNode Gen-1 has an uplink decoder only (no `Encoder/` folder), and its decode
 - [Milesight Gateway](https://www.milesight.com/iot/#lorawan-gateway) (built-in network server)
 
 ## How to Use
+
+For MY-L1-CO2-X1 and MY-L1-SPH-X1, use the `Encoders/<Device>_encoder_<platform>.js` file wherever the steps below name a `_TTN.js`, `_Chirpstack.js` or `_Milesight.js` file. The `Decoders/` files decode uplinks only and cannot send downlinks.
 
 ### The Things Stack
 
